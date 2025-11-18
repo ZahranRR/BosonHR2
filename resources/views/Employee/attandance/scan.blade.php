@@ -205,65 +205,78 @@
             }
         }
 
-        function wrapText(context, text, x, y, maxWidth, lineHeight) {
+        function wrapText(context, text, x, y, maxWidth, lineHeight, measureOnly = false) {
             const words = text.split(' ');
             let line = '';
+            let lineCount = 0;
 
             for (let n = 0; n < words.length; n++) {
                 const testLine = line + words[n] + ' ';
-                const metrics = context.measureText(testLine);
+                const metrics = context.measureText(testLine); // FIXED
                 const testWidth = metrics.width;
 
                 if (testWidth > maxWidth && n > 0) {
-                    context.fillText(line, x, y);
+                    if (!measureOnly) {
+                        context.fillText(line, x, y);
+                    }
                     line = words[n] + ' ';
                     y += lineHeight;
+                    lineCount++;
                 } else {
                     line = testLine;
                 }
             }
-            context.fillText(line, x, y);
+
+            if (!measureOnly) {
+                context.fillText(line, x, y);
+            }
+
+            return lineCount + 1;
         }
 
         function captureAndSend(apiurl, action, latitude, longitude, address) {
-            // Ambil frame dari video
             canvas.width = video.videoWidth;
             canvas.height = video.videoHeight;
             context.drawImage(video, 0, 0, canvas.width, canvas.height);
 
             const timestamp = new Date().toLocaleString();
 
-            // Tentukan area teks dan pembungkus
             const maxWidth = canvas.width - 40;
             const lineHeight = 22;
-            const textX = 20;
+            const x = 20; // FIXED
+            const tempY = 0;
 
-            // Hitung tinggi background dinamis
-            const words = address.split(' ');
-            const charsPerLine = Math.floor(maxWidth / 10);
-            const lineCount = Math.ceil(words.join(' ').length / charsPerLine);
-            const boxHeight = 50 + (lineCount * 22);
+            // Set font
+            context.font = '20px Arial';
 
-            // Gambar background semi-transparan
+            // Hitung jumlah baris真实
+            const lineCount = wrapText(context, `📍 ${address}`, x, tempY, maxWidth, lineHeight, true);
+
+            // Hitung tinggi background
+            const boxHeight = (lineCount * lineHeight) + 70;
+
+            // Background
             context.fillStyle = 'rgba(0, 0, 0, 0.5)';
             context.fillRect(0, canvas.height - boxHeight, canvas.width, boxHeight);
 
-            // Teks putih dengan shadow agar kontras
+            // Teks
             context.fillStyle = 'white';
             context.font = '20px Arial';
-            context.shadowColor = 'rgba(0, 0, 0, 0.7)';
+            context.shadowColor = 'rgba(0,0,0,0.7)';
             context.shadowBlur = 4;
 
-            // Gambar alamat dan waktu
-            let textY = canvas.height - boxHeight + 30;
-            wrapText(context, `📍 ${address}`, textX, textY, maxWidth, lineHeight);
-            textY += (lineCount * lineHeight) + 5;
-            context.fillText(`🕒 ${timestamp}`, textX, textY);
+            let startY = canvas.height - boxHeight + 30;
 
-            // Konversi ke base64
+            // Gambar alamat
+            const realLineCount = wrapText(context, `📍 ${address}`, x, startY, maxWidth, lineHeight);
+
+            // Gambar timestamp
+            const timestampY = startY + (realLineCount * lineHeight) + 15;
+            context.fillText(`🕒 ${timestamp}`, x, timestampY);
+
+            // Convert
             const imageData = canvas.toDataURL('image/jpeg');
 
-            // Kirim ke server
             sendImageToServer(imageData, apiurl, action, latitude, longitude, address);
         }
 

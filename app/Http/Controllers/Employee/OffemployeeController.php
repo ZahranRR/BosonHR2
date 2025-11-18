@@ -13,6 +13,9 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
+use Intervention\Image\ImageManager;
+use Intervention\Image\Drivers\Gd\Driver;
+use Intervention\Image\Encoders\JpegEncoder;
 use Google_Client;
 use Google_Service_Calendar;
 use Google_Service_Calendar_Event;
@@ -151,11 +154,27 @@ class OffemployeeController extends Controller
             'image' => 'required|image|mimes:jpeg,png,jpg,gif|max:2048',
         ]);
 
-        // Upload gambar dan simpan namanya
-        $imageName = time() . '.' . $request->image->extension();
-        $request->image->move(public_path('uploads'), $imageName);
+        $imageName = $request->file('image');
+        $filename = time() . '.jpg'; // paksa ke JPG
 
-        return $imageName;
+        // Gunakan Intervention v3
+        $manager = new ImageManager(new Driver());
+
+        // Read image
+        $img = $manager->read($imageName->getRealPath());
+
+        // Resize & maintain ratio
+        $img = $img->scaleDown(width: 1200, height: 1200);
+
+        // Path simpan
+        $savePath = public_path('uploads/' . $filename);
+
+        $encoder = new JpegEncoder(quality: 50);
+
+        // Simpan dengan kompresi quality: 75
+        $img->encode($encoder)->save($savePath);
+        
+        return $filename;
     }
 
     public function approverIndex(Request $request)
@@ -173,10 +192,6 @@ class OffemployeeController extends Controller
                 return $query->whereDate('start_event', $filterDate);
             })
             ->get();
-
-        // Offrequest::where('status', 'pending')
-        //     ->where('is_read', false)
-        //     ->update(['is_read' => true]);
 
         return view('Employee.Offrequest.approve', compact('offrequests', 'approvedRequests'));
     }

@@ -72,7 +72,7 @@
                     </div>
 
                     <div class="form-group">
-                        <label for="image">Upload Proof of Leave (Optional)</label>
+                        <label for="image">Upload Proof of Leave</label>
                         <div class="input-group">
                             <div class="custom-file">
                                 <input type="file" name="image"

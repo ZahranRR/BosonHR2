@@ -14,6 +14,11 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
+use Intervention\Image\ImageManager;
+use Intervention\Image\Drivers\Gd\Driver;
+use Intervention\Image\Encoders\JpegEncoder;
+
+
 
 class OvertimeController extends Controller
 {
@@ -34,18 +39,6 @@ class OvertimeController extends Controller
         ->get();
 
         return view('Superadmin.overtime.index', compact('overtimes'));
-
-        // // Jika user punya role superadmin, tampilkan semua
-        // if (auth()->user()->hasRole('superadmin')) {
-        //     $overtimes = Overtime::with('employee')->get();
-        // } else {
-        //     // Kalau bukan superadmin, hanya tampilkan overtime milik employee yg login
-        //     $overtimes = Overtime::whereHas('employee', function ($query) {
-        //         $query->where('employee_id', auth()->user()->employee->employee_id);
-        //     })->get();
-        // }
-
-        // return view('Superadmin.overtime.index', compact('overtimes'));
     }
 
 
@@ -110,9 +103,28 @@ class OvertimeController extends Controller
         try {
             // Simpan file jika ada
             if ($request->hasFile('attachment')) {
-                $attachmentPath = $request->file('attachment')->store('overtime_attachments', 'public');
-            }
+                $image = $request->file('attachment');
+                $filename = time() . '.jpg'; // paksa ke JPG
 
+                // Gunakan Intervention v3
+                $manager = new ImageManager(new Driver());
+    
+                // Read image
+                $img = $manager->read($image->getRealPath());
+    
+                // Resize & maintain ratio
+                $img = $img->scaleDown(width: 1200, height: 1200);
+    
+                // Path simpan
+                $savePath = public_path('storage/overtime_attachments/' . $filename);
+
+                $encoder = new JpegEncoder(quality: 50);
+    
+                // Simpan dengan kompresi quality: 75
+                $img->encode($encoder)->save($savePath);
+    
+                $attachmentPath = 'overtime_attachments/' . $filename;
+            }
 
             // Membuat data overtime
             $overtime = Overtime::create([

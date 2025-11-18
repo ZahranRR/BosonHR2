@@ -13,6 +13,10 @@ use App\Models\Offrequest;
 use App\Models\WorkdaySetting;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Auth;
+use Intervention\Image\ImageManager;
+use Intervention\Image\Drivers\Gd\Driver;
+use Intervention\Image\Encoders\JpegEncoder;
+
 
 class AttandanceController extends Controller
 {
@@ -30,22 +34,32 @@ class AttandanceController extends Controller
 
         // Pisahkan header dan data
         [$header, $data] = explode(";base64,", $base64);
+        $imageData = base64_decode($data);
 
         // Ambil extension dari header → jpeg/png/webp/etc
-        $mime = str_replace("data:image/", "", $header);
-        $extension = ($mime !== "") ? $mime : "jpg";
+        // $mime = str_replace("data:image/", "", $header);
+        // $extension = ($mime !== "") ? $mime : "jpg";
 
-        // Generate nama file unik
-        $imageName = uniqid() . "." . $extension;
+        // Generate nama file jpg
+        $filename = uniqid() . ".jpg";
+        $path = storage_path("app/public/attandance_images/" . $filename);
 
-        // Decode dan simpan file
-        Storage::disk('public')->put(
-            "attandance_images/" . $imageName,
-            base64_decode($data)
-        );
+        // Gunakan Intervention v3
+        $manager = new ImageManager(new Driver());
 
-        // Kembalikan path untuk disimpan di DB
-        return "attandance_images/" . $imageName;
+        // Baca dari base64
+        $img = $manager->read($imageData);
+
+        // Resize proporsional — maksimal 1200px
+        $img = $img->scaleDown(width: 1200, height: 1200);
+
+        // Encoder JPEG quality 50-60
+        $encoder = new JpegEncoder(quality: 55);
+
+        // Save
+        $img->encode($encoder)->save($path);
+
+        return "attandance_images/" . $filename;
     }
 
     public function index(Request $request)
