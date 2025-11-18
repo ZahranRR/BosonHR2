@@ -22,6 +22,32 @@ class AttandanceController extends Controller
         $this->middleware('permission:attendance.scan')->only(['scanView', 'checkIn', 'checkOut']);
     }
 
+    private function saveAttendanceImage($base64)
+    {
+        if (!$base64 || !str_contains($base64, ";base64,")) {
+            return null; // Base64 invalid
+        }
+
+        // Pisahkan header dan data
+        [$header, $data] = explode(";base64,", $base64);
+
+        // Ambil extension dari header → jpeg/png/webp/etc
+        $mime = str_replace("data:image/", "", $header);
+        $extension = ($mime !== "") ? $mime : "jpg";
+
+        // Generate nama file unik
+        $imageName = uniqid() . "." . $extension;
+
+        // Decode dan simpan file
+        Storage::disk('public')->put(
+            "attandance_images/" . $imageName,
+            base64_decode($data)
+        );
+
+        // Kembalikan path untuk disimpan di DB
+        return "attandance_images/" . $imageName;
+    }
+
     public function index(Request $request)
     {
         $date = $request->input('date', now()->format('Y-m-d'));
@@ -83,15 +109,7 @@ class AttandanceController extends Controller
         }
 
         // Simpan gambar yang diupload
-        $imagePath = null;
-        if ($request->has('image')) {
-            $imageData = $request->input('image');
-            $imageData = str_replace('data:image/jpeg;base64,', '', $imageData);
-            $imageData = str_replace(' ', '+', $imageData);
-            $imageName = uniqid() . '.jpg';
-            Storage::put('public/attandance_images/' . $imageName, base64_decode($imageData));
-            $imagePath = 'attandance_images/' . $imageName;
-        }
+        $imagePath = $this->saveAttendanceImage($request->image);
 
         // Waktu sekarang dan waktu check-in yang dijadwalkan
         $currentTime = now();
@@ -178,15 +196,7 @@ class AttandanceController extends Controller
         }
 
         // Simpan gambar yang diupload
-        $imagePath = null;
-        if ($request->has('image')) {
-            $imageData = $request->input('image');
-            $imageData = str_replace('data:image/jpeg;base64,', '', $imageData);
-            $imageData = str_replace(' ', '+', $imageData);
-            $imageName = uniqid() . '.jpg';
-            Storage::put('public/attandance_images/' . $imageName, base64_decode($imageData));
-            $imagePath = 'attandance_images/' . $imageName;
-        }
+        $imagePath = $this->saveAttendanceImage($request->image);
 
         // Update check_out dan status
         $attendance->check_out = $currentTime;

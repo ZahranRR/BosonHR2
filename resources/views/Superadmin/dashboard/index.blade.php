@@ -22,6 +22,34 @@
     </div> --}}
 
     <div class="row">
+        <div class="col-lg-3 col-6">
+            <a href="{{ route ('offrequest.approver') }}">
+                <div class="small-box bg-primary">
+                    <div class="inner" style="color: white;">
+                        <h3>{{ $pendingCount }}</h3>
+                        <p>Off Request</p>
+                    </div>
+                    <div class="icon">
+                        <i class="ion ion-android-remove-circle"></i> <!-- Ikon untuk recruitment -->
+                    </div>
+                </div>
+            </a>
+        </div>
+
+        <div class="col-lg-3 col-6">
+            <a href="{{ route ('overtime.approvals') }}">
+                <div class="small-box bg-info">
+                    <div class="inner" style="color: white;">
+                        <h3>{{ $pendingOvertimeCount }}</h3>
+                        <p>Overtime Request</p>
+                    </div>
+                    <div class="icon">
+                        <i class="ion ion-ios-clock"></i> <!-- Ikon untuk recruitment -->
+                    </div>
+                </div>
+            </a>
+        </div>
+
         <!-- Small Box for Total Employees -->
         <div class="col-lg-3 col-6">
             <div class="small-box bg-warning">

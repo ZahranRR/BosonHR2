@@ -2,7 +2,7 @@
 
 namespace App\Providers;
 
-use App\Models\Companyname;
+use App\Models\CompanyName;
 use App\Models\Role;
 use Illuminate\Support\Facades\View;
 use Closure;
@@ -32,7 +32,7 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         View::composer('*', function ($view) {
-            $companynames = Companyname::first(); // Ambil setting pertama (jika hanya satu row)
+            $companynames = CompanyName::first(); // Ambil setting pertama (jika hanya satu row)
             $view->with('companyname', $companynames);
         });
 

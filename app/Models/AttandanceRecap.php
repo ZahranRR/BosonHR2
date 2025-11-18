@@ -11,7 +11,7 @@ class AttandanceRecap extends Model
     use HasFactory;
     protected $table = 'attandance_recaps';
 
-    protected $fillable = ['employee_id', 'month', 'total_present', 'total_late', 'total_early', 'total_absent'];
+    protected $fillable = ['employee_id', 'month', 'total_present', 'total_late', 'total_early', 'total_absent', 'total_overtime'];
 
     public function employee()
     {

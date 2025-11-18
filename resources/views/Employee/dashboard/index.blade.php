@@ -6,7 +6,7 @@
         <div class="row">
             <!-- Kolom Kalender -->
             <div class="col-lg-6 col-md-6 col-sm-12 mt-3">
-                <div class="card card-primary">
+                <div class="card card-primary equal-height">
                     <div class="card-header d-flex justify-content-between align-items-center">
                         <h3 class="card-title">Event Calendar</h3>
                     </div>
@@ -19,7 +19,7 @@
 
             <!-- Kolom Tabel Attendance -->
             <div class="col-lg-6 col-md-6 col-sm-12 mt-3">
-                <div class="card card-dark">
+                <div class="card card-dark equal-height">
                     <div class="card-header">
                         <h3 class="card-title">Attendance</h3>
                     </div>
@@ -169,6 +169,16 @@
             .pagination-container .page-link {
                 font-size: 12px;
             }
+        }
+
+        .equal-height {
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .equal-height .card-body {
+            flex: 1;
         }
     </style>
 

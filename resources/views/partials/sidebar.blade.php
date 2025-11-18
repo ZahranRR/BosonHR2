@@ -61,7 +61,7 @@
                             <a href="{{ route('dashboard.index') }}"
                                 class="nav-link {{ request()->routeIs('dashboard.index') ? 'active' : '' }}">
                                 <i class="fas fa-home nav-icon"></i>
-                                <p>Dashboard</p>
+                                <p>Admin Dashboard</p>
                             </a>
                         </li>
                     @endcan
@@ -71,7 +71,7 @@
                             <a href="{{ route('dashboardemployee.index') }}"
                                 class="nav-link {{ request()->routeIs('dashboardemployee.index') ? 'active' : '' }}">
                                 <i class="fas fa-home nav-icon"></i>
-                                <p>Dashboard</p>
+                                <p>Employee Dashboard</p>
                             </a>
                         </li>
                     @endcan
@@ -108,14 +108,106 @@
                     </li>
                 @endcanany
 
+                @canany(['resignationrequest.approver', 'offrequest.approver', 'overtime.approvals', 'kasbon.index', 'payroll.index'] )
+                    @php
+                        $isHrMenuOpen = 
+                            request()->routeIs('resignationrequest.approver') || 
+                            request()->routeIs('offrequest.approver') || 
+                            request()->routeIs('overtime.approvals') ||
+                            request()->routeIs('kasbon.index') ||
+                            request()->routeIs('payroll.index');
+                    @endphp
+                    <li class="nav-item {{ $isHrMenuOpen ? 'menu-open' : '' }}">
+                        <a href="#" class="nav-link {{ $isHrMenuOpen ? 'active' : '' }}">
+                            <i class="nav-icon fas fa-folder"></i>
+                            <p>
+                                HR Menu
+                                <i class="fas fa-angle-left right"></i>
+                            </p>
+                        </a>
+                        
+                        <ul class="nav nav-treeview">
+                            @can('kasbon.index')
+                            <li class="nav-item">
+                                <a href="{{ route('kasbon.index') }}" 
+                                    class="nav-link {{ request()->routeIs('kasbon.index') ? 'active' : '' }}">
+                                    <i class="far fa-circle nav-icon"></i>
+                                    <p>Kasbon</p>
+                                </a>
+                            </li>
+                            @endcan
+
+                            @can('offrequest.approver')
+                            <li class="nav-item">
+                                <a href="{{ route('offrequest.approver') }}"
+                                    class="nav-link {{ request()->routeIs('offrequest.approver') ? 'active' : '' }}">
+                                    <i class="far fa-circle nav-icon"></i>
+                                    <p>
+                                        Off Request Approval
+                                        @if ($pendingCount > 0)
+                                            <span class="right badge badge-danger">{{ $pendingCount }}</span>
+                                        @endif
+
+                                    </p>
+                                </a>
+                            </li>
+                            @endcan
+
+                            @can('overtime.approvals')
+                            <li class="nav-item">
+                                <a href="{{ route('overtime.approvals') }}" 
+                                    class="nav-link {{ request()->routeIs('overtime.approvals') ? 'active' : '' }}">
+                                    <i class="far fa-circle nav-icon"></i>
+                                    <p>Overtime Approval</p>
+                                    @if ($pendingOvertimeCount > 0)
+                                    <span class="right badge badge-danger">{{ $pendingOvertimeCount }}</span>
+                                    @endif
+                                </a>
+                            </li>
+                            @endcan
+
+                            @can('payroll.index')
+                            <li class="nav-item">
+                                <a href="{{ route('payroll.index') }}" 
+                                    class="nav-link {{ request()->routeIs('payroll.index') ? 'active' : '' }}">
+                                    <i class="far fa-circle nav-icon"></i>
+                                    <p>Payroll</p>
+                                </a>
+                            </li>
+                            @endcan
+
+                            @canany('resignationrequest.approver')
+                            <li class="nav-item">
+                                <a href="{{ route('resignationrequest.approver') }}"
+                                    class="nav-link {{ request()->routeIs('resignationrequest.approver') ? 'active' : '' }}">
+                                    <i class="far fa-circle nav-icon"></i>
+                                    <p>Resignation Request Approval</p>
+                                </a>
+                            </li>
+                            @endcan
+                        </ul>
+                    </li>
+                @endcanany
+
                 @canany(['employee.index', 'employee.create', 'attendance.index', 'attendance.scan', 'offrequest.index',
-                    'offrequest.create', 'offrequest.approver', 'payroll.index', 'payroll.create', 'divisions.index',
+                    'offrequest.create', 'payroll.index', 'payroll.create', 'divisions.index',
                     'divisions.create', 'submitresign.index', 'submitresign.create', 'resignationrequest.index',
-                    'resignationrequest.create', 'resignationrequest.approver'])
+                    'resignationrequest.create'])
+                    @php
+                        $isEmployeeDataOpen = 
+                            request()->routeIs('employee.*') || 
+                            request()->routeIs('attandance.*') || 
+                            request()->routeIs('offrequest.index') ||
+                            request()->routeIs('offrequest.create') ||
+                            request()->routeIs('submitresign.*') || 
+                            request()->routeIs('resignationrequest.index') || 
+                            request()->routeIs('resignationrequest.create') || 
+                            request()->routeIs('divisions.*');
+                    @endphp
                     <li
-                        class="nav-item {{ request()->routeIs('employee.*') || request()->routeIs('attandance.*') || request()->routeIs('offrequest.*') || request()->routeIs('submitresign.*') || request()->routeIs('resignationrequest.*') || request()->routeIs('divisions.*') ? 'menu-open' : '' }}">
+                        class="nav-item {{ $isEmployeeDataOpen ? 'menu-open' : '' }}">
                         <a href="#"
-                            class="nav-link {{ request()->routeIs('employee.*') || request()->routeIs('attandance.*') || request()->routeIs('offrequest.*') || request()->routeIs('submitresign.*') || request()->routeIs('resignationrequest.*') || request()->routeIs('divisions.*') ? 'active' : '' }}">
+                            class="nav-link {{ $isEmployeeDataOpen ? 'active' : '' }}">
                             <i class="nav-icon fas fa-id-badge"></i>
                             <p>
                                 Employee Data
@@ -182,16 +274,6 @@
                                 </li>
                             @endcanany
 
-                            @canany(['resignationrequest.approver'])
-                                <li class="nav-item">
-                                    <a href="{{ route('resignationrequest.approver') }}"
-                                        class="nav-link {{ request()->routeIs('resignationrequest.approver') ? 'active' : '' }}">
-                                        <i class="far fa-circle nav-icon"></i>
-                                        <p>Resignation Request Approval</p>
-                                    </a>
-                                </li>
-                            @endcanany
-
                             @canany(['submitresign.index', 'submitresign.create'])
                                 <li class="nav-item">
                                     @can('submitresign.index')
@@ -228,22 +310,6 @@
                                     @endcan
                                 </li>
                             @endcanany
-
-                            @can('offrequest.approver')
-                                <li class="nav-item">
-                                    <a href="{{ route('offrequest.approver') }}"
-                                        class="nav-link {{ request()->routeIs('offrequest.approver') ? 'active' : '' }}">
-                                        <i class="far fa-circle nav-icon"></i>
-                                        <p>
-                                            Off Request Approval
-                                            @if ($pendingCount > 0)
-                                                <span class="right badge badge-danger">{{ $pendingCount }}</span>
-                                            @endif
-
-                                        </p>
-                                    </a>
-                                </li>
-                            @endcan
 
                             @canany(['divisions.index', 'divisions.create'])
                                 <li class="nav-item">
@@ -312,18 +378,6 @@
                     </li>
                 @endcanany
 
-                @can('overtime.approvals')
-                    <li class="nav-item">
-                        <a href="{{ route('overtime.approvals') }}" class="nav-link ">
-                            <i class="far fa-circle nav-icon"></i>
-                            <p>Overtime Approval</p>
-                            @if ($pendingOvertimeCount > 0)
-                            <span class="right badge badge-danger">{{ $pendingOvertimeCount }}</span>
-                            @endif
-                        </a>
-                    </li>
-                @endcan
-
                 @canany(['employeebook.index'])
                     <li class="nav-item menu-open">
                         <ul class="nav nav-treeview">
@@ -332,45 +386,6 @@
                                     class="nav-link {{ request()->routeIs('employeebooks.index') ? 'active' : '' }}">
                                     <i class="fas fa-book nav-icon"></i>
                                     <p>Employee Books</p>
-                                </a>
-                            </li>
-                        </ul>
-                    </li>
-                @endcanany
-
-                @canany(['payroll.index'])
-                    <li class="nav-item menu-open">
-                        <ul class="nav nav-treeview">
-                            <li class="nav-item">
-                                <a href="{{ route('payroll.index') }}" class="nav-link">
-                                    <i class="fas fa-calculator nav-icon"></i>
-                                    <p>Payroll</p>
-                                </a>
-                            </li>
-                        </ul>
-                    </li>
-                @endcanany
-
-                @canany(['kasbon.index'])
-                    <li class="nav-item menu-open">
-                        <ul class="nav nav-treeview">
-                            <li class="nav-item">
-                                <a href="{{ route('kasbon.index') }}" class="nav-link">
-                                    <i class="fas fa-file-invoice-dollar nav-icon"></i>
-                                    <p>Kasbon</p>
-                                </a>
-                            </li>
-                        </ul>
-                    </li>
-                @endcanany
-
-                @canany(['kasbon.aprroval'])
-                    <li class="nav-item menu-open">
-                        <ul class="nav nav-treeview">
-                            <li class="nav-item">
-                                <a href="{{ route('kasbon.approval') }}" class="nav-link">
-                                    <i class="fas fa-credit-card nav-icon"></i>
-                                    <p>Kasbon</p>
                                 </a>
                             </li>
                         </ul>

@@ -177,19 +177,6 @@
         function takeSnapshot(action) {
             const apiurl = action === 'checkin' ? '{{ route('attandance.checkIn') }}' : '{{ route('attandance.checkOut') }}';
 
-            // // Set ukuran canvas sesuai video
-            // canvas.width = video.videoWidth;
-            // canvas.height = video.videoHeight;
-
-            // // Gambar frame dari video ke canvas
-            // context.drawImage(video, 0, 0, canvas.width, canvas.height);
-
-            // // Konversi ke base64
-            // const imageData = canvas.toDataURL('image/jpeg');
-
-            // // Kirim ke server
-            // sendImageToServer(imageData, url, action);
-
             // Ambil lokasi GPS sebelum ambil gambar
             if (navigator.geolocation) {
                 navigator.geolocation.getCurrentPosition(
@@ -281,18 +268,18 @@
         }
 
         function sendImageToServer(imageData, apiurl, action, latitude, longitude, address) {
+            let formData = new FormData();
+            formData.append('image', imageData);
+            formData.append('latitude', latitude);
+            formData.append('longitude', longitude);
+            formData.append('address', address);
+
             fetch(apiurl, {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/json',
                     'X-CSRF-TOKEN': '{{ csrf_token() }}'
                 },
-                body: JSON.stringify({
-                    image: imageData,
-                    latitude: latitude,
-                    longitude: longitude,
-                    address: address
-                })
+                body: formData
             })
                 .then(response => response.json())
                 .then(data => {

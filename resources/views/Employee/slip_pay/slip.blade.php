@@ -153,12 +153,12 @@
         </tr>
         <tr>
             <td>Bonus</td>
-            <td class="right">Rp {{ number_format($payroll->employee->bonus ?? 0, 0, ',', '.') }}</td>
+            <td class="right">Rp {{ number_format($payroll->employee->bonus_allowance ?? 0, 0, ',', '.') }}</td>
         </tr>
         <tr class="total">
             <td>Total Penerimaan</td>
             <td class="right">Rp
-                {{ number_format(($payroll->base_salary + ($payroll->attendance_allowance ?? 0) + $payroll->overtime_pay + ($payroll->employee->bonus ?? 0) + $payroll->employee->positional_allowance + $payroll->employee->transport_allowance), 0, ',', '.') }}
+                {{ number_format(($payroll->base_salary + ($payroll->attendance_allowance ?? 0) + $payroll->overtime_pay + ($payroll->employee->bonus_allowance ?? 0) + $payroll->employee->positional_allowance + $payroll->employee->transport_allowance), 0, ',', '.') }}
             </td>
         </tr>
     </table>

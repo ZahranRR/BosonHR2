@@ -205,6 +205,17 @@ class PayrollController extends Controller
                 $totalOvertimeHours += $hours;
 
                 \Log::debug("[OT] {$employee->first_name} {$employee->last_name} | {$ot->overtime_date} | Checkout {$checkOut->format('H:i')} | Overtime {$hours} jam");
+
+                //simpan total overtime ke db
+                AttandanceRecap::updateOrCreate(
+                    [
+                        'employee_id' => $employee->employee_id,
+                        'month'       => $month,
+                    ],
+                    [
+                        'total_overtime' => $totalOvertimeHours,
+                    ]
+                );                
             }
 
             // ⛔ Pastikan overtime minimal 0
@@ -268,6 +279,7 @@ class PayrollController extends Controller
             $totalDaysWorked   = $recap->total_present ?? 0;
             $totalLateCheckIn  = $recap->total_late ?? 0;
             $totalEarlyCheckOut = $recap->total_early ?? 0;
+            $totalOvertimeHours = $recap->total_overtime ?? 0;
 
             // --- Ambil hari kerja ---
             $divisionWorkDays = [];
@@ -353,6 +365,17 @@ class PayrollController extends Controller
                 $totalOvertimeHours += $hours;
 
                 Log::debug("[OT] {$employee->first_name} {$employee->last_name} | {$ot->overtime_date} | Checkout {$checkOut->format('H:i')} | Overtime {$hours} jam");
+
+                //simpan total overtime ke db
+                AttandanceRecap::updateOrCreate(
+                    [
+                        'employee_id' => $employee->employee_id,
+                        'month'       => $month,
+                    ],
+                    [
+                        'total_overtime' => $totalOvertimeHours,
+                    ]
+                ); 
             }
 
             $totalOvertimePay = 0;
@@ -481,6 +504,12 @@ class PayrollController extends Controller
             ->where('month', $month)
             ->first();
 
+        $recap = AttandanceRecap::where('employee_id', $employee->employee_id)
+            ->where('month', $month)
+            ->first();
+        
+        $totalOvertimeHours = $recap->total_overtime ?? 0;
+        
         // Pertahankan status lama kalau sudah Approved
         $status = $existing && strtolower($existing->status) === 'approved'
             ? 'Approved'
@@ -497,6 +526,7 @@ class PayrollController extends Controller
             'total_late_check_in'  => $totalLateCheckIn,
             'total_early_check_out' => $totalEarlyCheckOut,
             'effective_work_days'  => $effectiveWorkDays,
+            'total_overtime'       => $totalOvertimeHours,
             'overtime_pay'         => $overtimePay,
             'cash_advance'         => $cashAdvance,
             'positional_allowance' => $positionalAllowance,
@@ -531,6 +561,7 @@ class PayrollController extends Controller
             'total_late_check_in' => $totalLateCheckIn,
             'total_early_check_out' => $totalEarlyCheckOut,
             'effective_work_days' => $effectiveWorkDays,
+            'total_overtime'       => $totalOvertimeHours,
             'overtime_pay'        => $overtimePay,
             'cash_advance'        => $cashAdvance,
             'positional_allowance' => $positionalAllowance,

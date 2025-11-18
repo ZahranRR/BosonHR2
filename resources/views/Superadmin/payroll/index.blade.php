@@ -70,26 +70,26 @@
                 <table class="table table-striped projects">
                     <thead>
                         <tr>
-                            <th style="width: 15%">Employee Name</th>
-                            <th style="width: 13%" class="text-center">Current Salary</th>
-                            <th style="width: 9%" class="text-center">Total Days Worked</th>
-                            <th style="width: 9%" class="text-center">Total Days Off</th>
-                            <th style="width: 9%" class="text-center">Total Absent</th>
-                            <th style="width: 9%" class="text-center">Total Late Check In</th>
-                            <th style="width: 9%" class="text-center">Total Early Check Out</th>
-                            <th style="width: 9%" class="text-center">Effective Work Days</th>
-                            <th style="width: 9%" class="text-center">Overtime Pay</th>
-                            <th class="text-center text-danger">Cash Advance</th>
+                            <th style="width: 10%">Employee Name</th>
+                            <th style="width: 15%" class="text-center">Current Salary</th>
+                            <th style="width: 5%" class="text-center">Total Days Worked</th>
+                            <th style="width: 5%" class="text-center">Total Days Off</th>
+                            <th style="width: 5%" class="text-center">Total Absent</th>
+                            <th style="width: 5%" class="text-center">Total Late Check In</th>
+                            <th style="width: 5%" class="text-center">Total Early Check Out</th>
+                            <th style="width: 5%" class="text-center">Effective Work Days</th>
+                            <th style="width: 5%" class="text-center">Overtime Hour</th>
+                            <th style="width: 10%" class="text-center">Overtime Pay</th>
+                            <th style="width: 15%"class="text-center text-danger">Cash Advance</th>
                             <th style="width: 15%" class="text-center">Total Salary</th>
-                            <th style="width: 15%" class="text-center">Action</th>
-                            <th style="width: 15%" class="text-center">Validation Status</th>
+                            <th style="width: 10%" class="text-center">Validation Status</th>
                         </tr>
                     </thead>
                     <tbody>
                         @forelse ($payrolls as $data)
                         <tr>
                             <td>{{ $data['employee_name'] }}</td>
-                            <td class="text-right">
+                            <td class="text-left">
                                 Rp. {{ number_format($data['current_salary'], 0, ',', '.') }}
                             </td>
                             <td class="text-center">{{ $data['total_days_worked'] }}</td>
@@ -98,20 +98,14 @@
                             <td class="text-center">{{ $data['total_late_check_in'] }}</td>
                             <td class="text-center">{{ $data['total_early_check_out'] }}</td>
                             <td class="text-center">{{ $data['effective_work_days'] }}</td>
-                            <td class="text-right">Rp. {{ number_format($data['overtime_pay'], 0, ',', '.') }}</td>
+                            <td class="text-center">{{ $data['total_overtime'] }}</td>
+                            <td class="text-left">Rp. {{ number_format($data['overtime_pay'], 0, ',', '.') }}</td>
 
-                            <td class="text-right text-danger" id="cash-advance-{{ $data['payroll_id'] }}">
+                            <td class="text-left text-danger" id="cash-advance-{{ $data['payroll_id'] }}">
                                 Rp. {{ number_format($data['cash_advance'], 0, ',', '.') }}
                             </td>
 
-                            <td class="text-right">Rp. {{ number_format($data['total_salary'], 0, ',', '.') }}</td>
-
-                            <td class="text-center">
-                                <a href="{{ route('kasbon.create', ['id' => $data['employee_id'] ?? $data['id'] ?? null]) }}" 
-                                    class="btn btn-sm btn-primary">
-                                    {{ ($data['cash_advance'] > 0) ? 'Edit Kasbon' : 'Add Kasbon' }}
-                                 </a>
-                            </td>
+                            <td class="text-left">Rp. {{ number_format($data['total_salary'], 0, ',', '.') }}</td>
 
                             <td class="text-center">
                                 @if (strtolower($data['status']) === 'pending')
