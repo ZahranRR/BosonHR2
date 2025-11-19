@@ -1,6 +1,11 @@
 @extends('layouts.app')
 @section('title', 'Kasbon/Edit')
 @section('content')
+    <style>
+        .btn-warning {
+            color: #fff;    
+        }
+    </style>
     <div class="content">
         <section class="content">
             <div class="container-fluid">
@@ -94,6 +99,53 @@
                     </form>
                 </div>
             </div>
+
+            <div class="container-fluid">
+                <div class="card">
+                    <div class="card-header">
+                        <div class="d-flex justify-content-between w-100 align-items-center">
+                            <h3 class="card-title mb-0">Kasbon Ongoing - {{ $employee->first_name }} {{ $employee->last_name }}</h3>
+                            {{-- <a href="{{ route('kasbon.index') }}" class="btn btn-secondary">Back</a> --}}
+                        </div>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table table-striped projects">
+                                <thead>
+                                    <tr>
+                                        <th style="width: 10%" class="text-center">Month</th>
+                                        <th style="width: 10%" class="text-center">Per Installments</th>
+                                        <th style="width: 10%" class="text-center">Action</th>
+                                    </tr>
+                                </thead>
+        
+                                <tbody>
+                                    @if(!empty($ongoingKasbon) && $ongoingKasbon->count())
+                                        @foreach ($ongoingKasbon as $c)
+                                            <tr>
+                                                <td class="text-center">{{$c->start_month}}</td>
+                                                <td class="text-center">Rp. {{ number_format($c->installment_amount, 0, ',', '.') }}</td>
+                                            </tr>
+                                        @endforeach
+                                    @else
+                                        <tr>
+                                            <td colspan="3" class="text-center">Tidak ada kasbon ongoing untuk employee ini.</td>
+                                        </tr>
+                                    @endif
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <div class="card-footer d-flex">
+                        <form action="{{ route('kasbon.finish', $employee->employee_id) }}" method="POST" style="display:inline-block;">
+                            @csrf
+                            <button type="button" class="btn btn-warning finishall-kasbon" data-id="{{$employee->employee_id}}">
+                                Finish All Kasbon
+                            </button>
+                        </form>
+                    </div>            
+                </div>
+            </div>
         </section>
     </div>
 
@@ -118,6 +170,68 @@
                 timer: 1200
             }).then(() => {
                 form.submit();
+            });
+        });
+    </script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+        
+            document.querySelectorAll('.finishall-kasbon').forEach(button => {
+                button.addEventListener('click', function () {
+        
+                    let employeeId = this.dataset.id;
+        
+                    Swal.fire({
+                        title: "Are you sure?",
+                        text: "Seluruh Kasbon akan disetujui dan tidak dapat diubah lagi.",
+                        icon: "question",
+                        showCancelButton: true,
+                        confirmButtonColor: "#ffc107",
+                        cancelButtonColor: "#3085d6",
+                        confirmButtonText: "Yes, finish all!"
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            fetch(`/Superadmin/kasbon/finish/${employeeId}`, {
+                                method: 'POST',
+                                headers: {
+                                    'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                                    'Accept': 'application/json',
+                                    'Content-Type': 'application/json'
+                                },
+                                body: JSON.stringify({})
+                            })
+                            .then(response => response.json())
+                            .then(data => {
+                                if(data.success) {
+                                    Swal.fire({
+                                        icon: 'success',
+                                        title: 'Success',
+                                        text: data.success,
+                                        timer: 1500,
+                                        showConfirmButton: false
+                                    }).then(() => {
+                                        window.location.href = "{{ route('kasbon.index') }}";
+                                    });
+                                } else if(data.error) {
+                                    Swal.fire({
+                                        icon: 'error',
+                                        title: 'Error',
+                                        text: data.error
+                                    });
+                                }
+                            })
+                            .catch(err => {
+                                Swal.fire({
+                                    icon: 'error',
+                                    title: 'Error',
+                                    text: 'Terjadi kesalahan server!'
+                                });
+                            });
+                        }
+                    });
+        
+                });
             });
         });
     </script>

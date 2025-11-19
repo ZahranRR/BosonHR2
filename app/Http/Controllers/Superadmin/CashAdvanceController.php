@@ -63,7 +63,7 @@ class CashAdvanceController extends Controller
                 'installment_amount' => $installmentAmount,
                 'remaining_installments' => 1, // tiap bulan 1x cicilan
                 'start_month' => $month,
-                'status' => 'completed', // tandai default jadwal
+                'status' => 'ongoing', // tandai default jadwal
             ]);
         }
 
@@ -75,7 +75,14 @@ class CashAdvanceController extends Controller
         $kasbon = CashAdvance::findOrFail($id);
         $employees = Employee::where('status', 'Active')->orderBy('first_name')->get();
 
-        return view('Superadmin.kasbon.update', compact('kasbon', 'employees'));
+        $employee = $kasbon->employee; // employee pemilik kasbon
+        $ongoingKasbon = CashAdvance::where('employee_id', $employee->employee_id)
+            ->where('status', 'ongoing')
+            ->orderBy('start_month')
+            ->get();
+    
+
+        return view('Superadmin.kasbon.update', compact('kasbon', 'employees', 'employee', 'ongoingKasbon'));
     }
 
     public function update(Request $request, $id)
@@ -107,19 +114,90 @@ class CashAdvanceController extends Controller
                 'installment_amount' => $installmentAmount,
                 'remaining_installments' => 1,
                 'start_month' => $month,
-                'status' => 'completed',
+                'status' => 'ongoing',
             ]);
         }
     
         return redirect()->route('kasbon.index')->with('success', 'Cash advance updated successfully.');
     }
 
-    public function destroy($id)
+    // public function finishKasbon($id)
+    // {
+    //     $kasbon = CashAdvance::findOrFail($id);
+
+    //     // Ambil kasbon bulan sebelumnya
+    //     $previous = CashAdvance::where('employee_id', $kasbon->employee_id)
+    //         ->where('start_month', '<', $kasbon->start_month)
+    //         ->orderBy('start_month', 'desc')
+    //         ->first();
+
+    //     if (!$previous) {
+    //         return back()->with('error', 'Tidak ada kasbon sebelumnya untuk dipindahkan.');
+    //     }
+
+    //     // Tambahkan installment bulan ini ke bulan sebelumnya
+    //     $previous->installment_amount += $kasbon->installment_amount;
+    //     $previous->save();
+
+    //     // Tandai kasbon ini sebagai cancelled
+    //     $kasbon->status = 'cancelled';
+    //     $kasbon->save();
+
+    //     return back()->with('success', 'Kasbon bulan ini berhasil dicancel dan ditambahkan ke bulan sebelumnya.');
+    // }
+
+    public function finishKasbon($employee_id)
+    {
+        $ongoingKasbon = CashAdvance::where('employee_id', $employee_id)
+            ->where('status', 'ongoing')
+            ->get();
+
+        if ($ongoingKasbon->isEmpty()) {
+            return response()->json(['error' => 'Tidak ada kasbon ongoing.']);
+        }
+
+        foreach ($ongoingKasbon as $kasbon) {
+            $kasbon->status = 'completed';
+            $kasbon->save();
+        }
+
+        return response()->json(['success' => 'Semua kasbon berhasil diselesaikan.']);
+    }
+
+    public function showFinishPage($employee_id)
+    {
+        $employee = Employee::findOrFail($employee_id);
+
+        // Ambil semua kasbon ongoing milik employee ini
+        $kasbon = CashAdvance::where('employee_id', $employee_id)
+            ->where('status', 'ongoing')
+            ->orderBy('start_month')
+            ->get();
+
+        $kasbon = null;
+        $employees = Employee::where('status', 'Active')->orderBy('first_name')->get();
+        
+        return view('Superadmin.kasbon.update', compact('kasbon', 'employees', 'employee', 'ongoingKasbon'));
+        // return view('Superadmin.kasbon.finish', compact('employee', 'kasbon'));
+    }
+
+    public function cancelKasbon($id)
     {
         $kasbon = CashAdvance::findOrFail($id);
-        $kasbon->delete();
+        $kasbon->status = 'cancelled';
+        $kasbon->save();
 
-        return redirect()->route('kasbon.index')->with('success', 'Kasbon deleted successfully.');
+        return back()->with('success', 'Kasbon berhasil dibatalkan');
     }
+
+    public function approve($id)
+    {
+        $kasbon = CashAdvance::findOrFail($id);
+        $kasbon->status = 'completed';
+        $kasbon->save();
+
+        return back()->with('success', 'Kasbon berhasil di selesaikan');
+    }
+
 
 }

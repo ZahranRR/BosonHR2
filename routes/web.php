@@ -368,16 +368,28 @@ Route::middleware(['auth', 'checkRoleStatus'])->group(function () {
             ->name('kasbon.store')
             ->middleware('permission:kasbon.create');
 
-        Route::delete('/kasbon/{id}', [CashAdvanceController::class, 'destroy'])
-            ->name('kasbon.destroy')
-            ->middleware('permission:kasbon.index');
-
         Route::get('/kasbon/{id}/edit', [CashAdvanceController::class, 'edit'])
             ->name('kasbon.edit')
             ->middleware('permission:kasbon.index');
 
         Route::put('/kasbon/{id}', [CashAdvanceController::class, 'update'])
             ->name('kasbon.update')
+            ->middleware('permission:kasbon.index');
+
+        Route::post('/kasbon/finish/{employee_id}', [CashAdvanceController::class, 'finishKasbon'])
+            ->name('kasbon.finish')
+            ->middleware('permission:kasbon.index');
+
+        Route::get('/kasbon/finish/page/{employee_id}', [CashAdvanceController::class, 'showFinishPage'])
+            ->name('kasbon.finish.page')
+            ->middleware('permission:kasbon.index');
+
+        Route::post('/kasbon/cancel/{id}', [CashAdvanceController::class, 'cancelKasbon'])
+            ->name('kasbon.cancel')
+            ->middleware('permission:kasbon.index');
+
+        Route::post('/kasbon/approve/{id}', [CashAdvanceController::class, 'approve'])
+            ->name('kasbon.approve')
             ->middleware('permission:kasbon.index');
     });
 

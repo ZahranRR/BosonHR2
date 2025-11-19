@@ -63,7 +63,7 @@ class PayrollController extends Controller
 
                 // Ambil kasbon aktif
                 $activeCashAdvance = CashAdvance::where('employee_id', $employee->employee_id)
-                    ->where('status', 'completed')
+                    ->whereIn('status', ['ongoing','completed'] )
                     ->whereRaw("LEFT(start_month, 7) = ?", [$month])
                     ->first();
 
@@ -75,19 +75,6 @@ class PayrollController extends Controller
                 // Belum ada payroll → tetap 0
                 $cashAdvance = 0;
             }
-
-            // // Ambil kasbon aktif 
-            // $activeCashAdvance = CashAdvance::where('employee_id', $employee->employee_id)
-            //     ->where('status', 'ongoing')
-            //     ->whereRaw("LEFT(start_month, 7) <= ?", [Carbon::parse($month)->format('Y-m')])
-            //     ->where('remaining_installments', '>', 0)
-            //     ->first();
-
-            // $cashAdvance = 0;
-            // if ($activeCashAdvance) {
-            //     // Hanya tampilkan cicilan bulan ini, tanpa mengurangi remaining_installments
-            //     $cashAdvance = $activeCashAdvance->installment_amount;
-            // }
 
             if ($employee->employee_type === 'Freelance') {
                 return $this->calculateFreelancePayroll($employee, $month, $cashAdvance);
@@ -239,7 +226,7 @@ class PayrollController extends Controller
 
             // Cek apakah pegawai punya kasbon aktif
             $activeCashAdvance = CashAdvance::where('employee_id', $employee->employee_id)
-                ->where('status', 'completed')
+                ->whereIn('status', ['ongoing','completed'] )
                 ->whereRaw("LEFT(start_month, 7) = ?", [$month])
                 ->first();
 
@@ -395,7 +382,7 @@ class PayrollController extends Controller
             $bonusAllowance = $employee->bonus_allowance ?? 0;
 
             $activeCashAdvance = CashAdvance::where('employee_id', $employee->employee_id)
-                ->where('status', 'completed')
+                ->whereIn('status', ['ongoing','completed'] )
                 ->whereRaw("LEFT(start_month, 7) = ?", [$month])
                 ->first();
 

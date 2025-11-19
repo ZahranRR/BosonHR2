@@ -5,10 +5,17 @@
         table.projects tbody tr.bg-light>td {
             background-color: #f2f2f2  !important;
         }
-#f2f2f2
+
         table.projects tbody tr.bg-white>td {
             background-color: #ffffff !important;
         }
+
+        .action-btn {
+            width: 115px;       
+            text-align: center;
+        }
+</style>
+
     </style>
 
     <section class="content">
@@ -42,11 +49,9 @@
                                 <th style="width: 10%" class="text-center">Total Amount</th>
                                 <th style="width: 10%" class="text-center">Installments</th>
                                 <th style="width: 10%" class="text-center">Per Installments</th>
-                                {{-- <th style="width: 10%" class="text-center">Remaining</th> --}}
                                 <th style="width: 10%" class="text-center">Start Month</th>
                                 <th style="width: 10%" class="text-center">Action</th>
                                 <th style="width: 5%" class="text-center">Status</th>
-                                {{-- <th style="width: 15%" class="text-center">Action</th> --}}
                             </tr>
                         </thead>
 
@@ -72,23 +77,37 @@
                                     <td class="text-center">Rp. {{ number_format($c->total_amount, 0, ',', '.') }}</td>
                                     <td class="text-center">{{$c->installments}}</td>
                                     <td class="text-center">Rp. {{ number_format($c->installment_amount, 0, ',', '.') }}</td>
-                                    {{-- <td class="text-center">{{ number_format($c->remaining_installments, 0, ',', '.') }}
-                                    </td> --}}
                                     <td class="text-center">{{$c->start_month}}</td>
                                     <td class="project-actions text-center">
-                                        <a class="btn btn-info btn-sm"
-                                            href="{{ route('kasbon.edit', ['id' => $c->cash_advance_id]) }}">
-                                            <i class="fas fa-pencil-alt"></i> Edit
-                                        </a>
 
-                                        <form method="POST" action="{{ route('kasbon.destroy', $c->cash_advance_id) }}"
-                                            style="display:inline;">
+                                        <form action="{{ route('kasbon.edit', $c->cash_advance_id) }}">
                                             @csrf
-                                            @method('DELETE')
-                                            <button type="submit" class="deleteButton btn btn-danger btn-sm">
-                                                <i class="deleteButton fas fa-trash"></i> Delete
+                                            <button type="submit" class="btn btn-info btn-sm mb-1 action-btn"
+                                            @if($c->status === 'cancelled' || $c->status === 'completed') disabled @endif>
+                                            Edit Kasbon
                                             </button>
                                         </form>
+
+                                        <form method="POST" action="{{ route('kasbon.approve' , $c->cash_advance_id) }}">
+                                            @csrf
+                                            <button type="button" 
+                                                class="btn btn-success btn-sm mb-1 action-btn approve-kasbon"
+                                                data-id="{{ $c->cash_advance_id }}"
+                                                @if($c->status === 'cancelled' || $c->status === 'completed') disabled @endif>
+                                                Approve Kasbon
+                                            </button>
+                                        </form>
+
+                                        <form method="POST" action="{{ route('kasbon.cancel', $c->cash_advance_id) }}" class="cancel-form">
+                                            @csrf
+                                            <button type="button"
+                                                class="btn btn-danger btn-sm mb-1 action-btn cancel-kasbon"
+                                                data-id="{{ $c->cash_advance_id }}"
+                                                @if($c->status === 'cancelled' || $c->status === 'completed') disabled @endif>
+                                                Cancel Kasbon
+                                            </button>
+                                        </form>                                        
+                                    
                                     </td>
                                     <td class="text-center">
                                         <span class="badge
@@ -112,46 +131,55 @@
     </section>
 
     <script>
-        $(document).ready(function () {
-            // saat tombol diklik isi modal
-            $('#kasbonModal').on('show.bs.modal', function (event) {
-                const button = $(event.relatedTarget);
-                const payrollId = button.data('id');
-                const cashAdvance = button.data('cash-advance');
-
-                $('#kasbonPayrollId').val(payrollId);
-                $('#kasbonNominal').val(cashAdvance);
-            });
-
-            // saat save
-            $('#saveCashAdvance').on('click', function () {
-                const payrollId = $('#kasbonPayrollId').val();
-                const cashAdvance = $('#kasbonNominal').val();
-
-                if (!payrollId || !cashAdvance) {
-                    Swal.fire('Error', 'Payroll ID dan nominal harus diisi.', 'error');
-                    return;
-                }
-
-                $.ajax({
-                    url: `/Superadmin/kasbon/cash-advance/${payrollId}`,
-                    method: 'POST',
-                    data: {
-                        _token: '{{ csrf_token() }}',
-                        payroll_id: payrollId,
-                        cash_advance: cashAdvance
-                    },
-                    success: function (response) {
-                        $('#kasbonModal').modal('hide');
-                        $('#cash-advance-' + payrollId).html('Rp. ' + response.cash_advance);
-                        Swal.fire('Berhasil', response.message, 'success');
-                    },
-                    error: function (xhr) {
-                        Swal.fire('Gagal', 'Gagal menyimpan data kasbon.', 'error');
-                        console.error(xhr.responseJSON);
-                    }
+        document.addEventListener('DOMContentLoaded', function () {
+        
+            document.querySelectorAll('.cancel-kasbon').forEach(button => {
+                button.addEventListener('click', function () {
+        
+                    let form = this.closest('form');
+        
+                    Swal.fire({
+                        title: "Are you sure?",
+                        text: "Kasbon akan dibatalkan dan tidak dapat diubah lagi.",
+                        icon: "warning",
+                        showCancelButton: true,
+                        confirmButtonColor: "#d33",
+                        cancelButtonColor: "#3085d6",
+                        confirmButtonText: "Yes, cancel it!"
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            form.submit();
+                        }
+                    });
+        
                 });
             });
+
+                // Approve Kasbon
+            document.querySelectorAll('.approve-kasbon').forEach(button => {
+                button.addEventListener('click', function () {
+
+                    let form = this.closest('form');
+
+                    Swal.fire({
+                        title: "Approve Kasbon?",
+                        text: "Kasbon akan disetujui dan tidak dapat diubah lagi.",
+                        icon: "question",
+                        showCancelButton: true,
+                        confirmButtonColor: "#28a745",
+                        cancelButtonColor: "#3085d6",
+                        confirmButtonText: "Yes, approve it!"
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            form.submit();
+                        }
+                    });
+
+                });
+            });
+        
         });
     </script>
+        
+    
 @endsection
