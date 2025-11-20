@@ -17,7 +17,18 @@ class CashAdvanceController extends Controller
             ->orderBy('employee_id')
             ->orderBy('start_month')
             ->get();
+
         return view('Superadmin.kasbon.index', compact('kasbon'));
+    }
+
+    public function kasbonList() {
+        $kasbonlists = CashAdvance::whereHas('employee', function ($query) {
+            $query->where('employee_id', auth()->user()->employee->employee_id); 
+        })
+        ->orderBy('start_month', 'desc')
+        ->get();
+
+        return view('Superadmin.kasbon.list', compact('kasbonlists'));
     }
 
     public function create($id = null)
@@ -120,31 +131,6 @@ class CashAdvanceController extends Controller
     
         return redirect()->route('kasbon.index')->with('success', 'Cash advance updated successfully.');
     }
-
-    // public function finishKasbon($id)
-    // {
-    //     $kasbon = CashAdvance::findOrFail($id);
-
-    //     // Ambil kasbon bulan sebelumnya
-    //     $previous = CashAdvance::where('employee_id', $kasbon->employee_id)
-    //         ->where('start_month', '<', $kasbon->start_month)
-    //         ->orderBy('start_month', 'desc')
-    //         ->first();
-
-    //     if (!$previous) {
-    //         return back()->with('error', 'Tidak ada kasbon sebelumnya untuk dipindahkan.');
-    //     }
-
-    //     // Tambahkan installment bulan ini ke bulan sebelumnya
-    //     $previous->installment_amount += $kasbon->installment_amount;
-    //     $previous->save();
-
-    //     // Tandai kasbon ini sebagai cancelled
-    //     $kasbon->status = 'cancelled';
-    //     $kasbon->save();
-
-    //     return back()->with('success', 'Kasbon bulan ini berhasil dicancel dan ditambahkan ke bulan sebelumnya.');
-    // }
 
     public function finishKasbon($employee_id)
     {

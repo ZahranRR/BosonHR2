@@ -132,7 +132,7 @@
                                 <a href="{{ route('kasbon.index') }}" 
                                     class="nav-link {{ request()->routeIs('kasbon.index') ? 'active' : '' }}">
                                     <i class="far fa-circle nav-icon"></i>
-                                    <p>Kasbon</p>
+                                    <p>Kasbon Approval</p>
                                 </a>
                             </li>
                             @endcan
@@ -378,6 +378,21 @@
                     </li>
                 @endcanany
 
+                @canany(['kasbon.list'])
+                    <li class="nav-item menu-open">
+                        <ul class="nav nav-treeview">
+                            <li class="nav-item">
+                                @can('kasbon.list')
+                                    <a href="{{ route('kasbon.list') }}" class="nav-link">
+                                        <i class="fas fa-credit-card nav-icon"></i>
+                                        <p>Kasbon</p>
+                                    </a>
+                                @endcan
+                            </li>
+                        </ul>
+                    </li>
+                @endcanany
+
                 @canany(['employeebook.index'])
                     <li class="nav-item menu-open">
                         <ul class="nav nav-treeview">
@@ -397,7 +412,7 @@
                         <ul class="nav nav-treeview">
                             <li class="nav-item">
                                 <a href="{{ route('slippay.index') }}" class="nav-link">
-                                    <i class="fas fa-credit-card nav-icon"></i>
+                                    <i class="fas fa-file-invoice-dollar nav-icon"></i>
                                     <p>Slip Pay</p>
                                 </a>
                             </li>

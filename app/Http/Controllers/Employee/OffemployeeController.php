@@ -60,7 +60,7 @@ class OffemployeeController extends Controller
                 'start_event' => 'required|date|after_or_equal:today',
                 'end_event' => 'required|date|after_or_equal:start_event',
                 'manager_id' => 'required|exists:users,user_id',
-                'image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+                'image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:10240',
             ]);
 
             $user = Auth::user();
@@ -125,7 +125,7 @@ class OffemployeeController extends Controller
     {
         // Validasi hanya untuk kolom image, kolom lain tetap readonly
         $request->validate([
-            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048', // Validasi gambar (opsional)
+            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:10240', // Validasi gambar (opsional)
         ]);
 
         // Mencari offrequest berdasarkan ID
@@ -151,7 +151,7 @@ class OffemployeeController extends Controller
     {
         // Validasi gambar
         $request->validate([
-            'image' => 'required|image|mimes:jpeg,png,jpg,gif|max:2048',
+            'image' => 'required|image|mimes:jpeg,png,jpg,gif|max:10240',
         ]);
 
         $imageName = $request->file('image');

@@ -33,7 +33,7 @@ class OvertimeController extends Controller
     {
         // Mengambil data overtime untuk employee yang sedang login
         $overtimes = Overtime::whereHas('employee', function ($query) {
-            $query->where('employee_id', auth()->user()->employee->employee_id); // Sesuaikan dengan 'employee_id' atau 'id' sesuai data Anda
+            $query->where('employee_id', auth()->user()->employee->employee_id); 
         })
         ->orderBy('overtime_date', 'desc')
         ->get();
@@ -97,7 +97,7 @@ class OvertimeController extends Controller
             'duration' => 'required|integer|in:1,2',
             'notes' => 'required|string|max:255',
             'manager_id' => 'required|exists:users,user_id',
-            'attachment' => 'required|image|mimes:jpg,jpeg,png|max:2048',
+            'attachment' => 'required|image|mimes:jpg,jpeg,png|max:10240',
         ]);
 
         try {

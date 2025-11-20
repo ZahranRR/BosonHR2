@@ -111,6 +111,7 @@ class RolesAndPermissionsSeeder extends Seeder
             'kasbon.create',
             'kasbon.edit',
             'kasbon.delete',
+            'kasbon.list',
 
             // Permission terkait Slip pay
             'slippay.index',
@@ -171,7 +172,8 @@ class RolesAndPermissionsSeeder extends Seeder
             'overtime.create',
             'slippay.index',
             'slippay.preview',
-            'slippay.download'
+            'slippay.download',
+            'kasbon.list'
         ]);
 
 

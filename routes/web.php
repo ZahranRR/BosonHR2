@@ -360,6 +360,10 @@ Route::middleware(['auth', 'checkRoleStatus'])->group(function () {
             ->name('kasbon.index')
             ->middleware('permission:kasbon.index');
 
+        Route::get('/kasbon/list', [CashAdvanceController::class, 'kasbonList'])
+            ->name('kasbon.list')
+            ->middleware('permission:kasbon.list');
+
         Route::get('/kasbon/create/{id?}', [CashAdvanceController::class, 'create'])
             ->name('kasbon.create')
             ->middleware('permission:kasbon.create');

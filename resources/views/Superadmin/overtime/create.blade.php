@@ -54,10 +54,29 @@
                             </div>
 
                             <!-- Attachment File (Image) -->
+                            {{-- <div class="form-group">
+                                <label for="attachment">Attachment (Image)</label>
+                                <input type="file" name="attachment" id="attachment" class="custom-file-input @error('image') is-invalid @enderror">
+                                <small class="text-muted">Upload Attachment (format: jpg, png, jpeg)</small>
+                            </div> --}}
+
                             <div class="form-group">
                                 <label for="attachment">Attachment (Image)</label>
-                                <input type="file" name="attachment" id="attachment" class="form-control" accept="image/*">
-                                <small class="text-muted">Upload Attachment (format: jpg, png, jpeg, max 2MB)</small>
+                                <div class="input-group">
+                                    <div class="custom-file">
+                                        <input type="file" name="attachment"
+                                            class="custom-file-input @error('attachment') is-invalid @enderror" id="attachment">
+                                        <label class="custom-file-label" for="attachment">Choose file</label>
+                                    </div>
+                                    <div class="input-group-append">
+                                        <span class="input-group-text"><i class="fas fa-upload"></i></span>
+                                    </div>
+                                </div>
+                                @error('attachment')
+                                    <span class="invalid-feedback" role="alert">
+                                        <strong>{{ $message }}</strong>
+                                    </span>
+                                @enderror
                             </div>
 
                             <!-- Select Manager -->
@@ -107,19 +126,6 @@
         document.addEventListener('DOMContentLoaded', function () {
             const form = document.querySelector('form');
             const attachmentInput = document.querySelector('#attachment');
-
-            // Validasi ukuran file (maks 2MB)
-            attachmentInput.addEventListener('change', function () {
-                const file = this.files[0];
-                if (file && file.size > 2 * 1024 * 1024) {
-                    Swal.fire({
-                        icon: 'error',
-                        title: 'File Too Large!',
-                        text: 'Ukuran file maksimal 2MB.',
-                    });
-                    this.value = ''; // reset input
-                }
-            });
 
             // Validasi error lainnya sebelum submit
             form.addEventListener('submit', function (e) {
