@@ -283,6 +283,7 @@
                                     <input type="text" name="transport_allowance" id="transport_allowance"
                                         class="form-control" value="{{old('transport_allowance')}}"
                                         oninput="formatCurrency(this)">
+                                    <small class="text-muted">Stock Opname = 0</small>
                                 </div>
 
                                 <div class="form-group">

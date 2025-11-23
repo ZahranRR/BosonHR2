@@ -25,6 +25,7 @@ class Payroll extends Model
         'base_salary',
         'overtime_pay',
         'attendance_allowance',
+        'transport_allowance',
         'absent_deduction',
         'cash_advance',
         'total_salary',

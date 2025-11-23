@@ -2,7 +2,64 @@
 @section('title', 'Payroll/index')
 @section('content')
 <section class="content">
+    <style>
+        .table-container {
+            overflow-x: auto;
+            overflow-y: hidden;
+            white-space: nowrap;
+            width: 100%;
+            position: relative;
+        }
 
+        .table-container table {
+            width: max-content;
+            min-width: 1100px;
+        }
+
+        #floating-scrollbar {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            overflow-x: auto;
+            overflow-y: hidden;
+            z-index: 9999;
+            background: #f1f1f1;
+            height: 16px; /* tingginya seperti scrollbar */
+        }
+
+        #floating-scrollbar-content {
+            height: 1px;
+        }
+    </style>
+
+    <div class="modal fade" id="modalTransport">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <form id="formTransport">
+                    @csrf
+    
+                    <div class="modal-header">
+                        <h5 class="modal-title">Add Transport Allowance</h5>
+                    </div>
+    
+                    <div class="modal-body">
+                        <input type="hidden" id="payroll_id">
+    
+                        <label>Transport Allowance</label>
+                        <input type="number" class="form-control" id="transport_value" oninput="formatNumber(this)">
+                    </div>
+    
+                    <div class="modal-footer">
+                        <button type="submit" class="btn btn-primary">
+                            Save
+                        </button>
+                    </div>
+    
+                </form>
+            </div>
+        </div>
+    </div>    
 
     {{-- Modal Kasbon --}}
     <div class="modal fade" id="kasbonModal" tabindex="-1" aria-labelledby="kasbonModalLabel" aria-hidden="true">
@@ -66,23 +123,25 @@
         </div>
 
         <div class="card-body p-0">
-            <div class="table-responsive">
+            <div class="table-container">
                 <table class="table table-striped projects">
                     <thead>
                         <tr>
-                            <th style="width: 10%">Employee Name</th>
-                            <th style="width: 15%" class="text-center">Current Salary</th>
-                            <th style="width: 5%" class="text-center">Total Days Worked</th>
-                            <th style="width: 5%" class="text-center">Total Days Off</th>
-                            <th style="width: 5%" class="text-center">Total Absent</th>
-                            <th style="width: 5%" class="text-center">Total Late Check In</th>
-                            <th style="width: 5%" class="text-center">Total Early Check Out</th>
-                            <th style="width: 5%" class="text-center">Effective Work Days</th>
-                            <th style="width: 5%" class="text-center">Overtime Hour</th>
-                            <th style="width: 10%" class="text-center">Overtime Pay</th>
-                            <th style="width: 15%"class="text-center text-danger">Cash Advance</th>
-                            <th style="width: 15%" class="text-center">Total Salary</th>
-                            <th style="width: 10%" class="text-center">Validation Status</th>
+                            <th style="width: 10%">Employee<br>Name</th>
+                            <th style="width: 15%" class="text-center">Current<br>salary</th>
+                            <th style="width: 5%" class="text-center">Total Days<br>Worked</th>
+                            {{-- <th style="width: 5%" class="text-center">Total Days Off</th> --}}
+                            <th style="width: 5%" class="text-center">Total<br>Absent</th>
+                            <th style="width: 5%" class="text-center">Total Late<br>Check In</th>
+                            <th style="width: 5%" class="text-center">Total Early<br>Check Out</th>
+                            <th style="width: 5%" class="text-center">Effective<br>Work Days</th>
+                            <th style="width: 5%" class="text-center">Attendance<br>Allowance</th>
+                            <th style="width: 5%" class="text-center">Transport<br>Allowance</th>
+                            <th style="width: 5%" class="text-center">Overtime<br>Hour</th>
+                            <th style="width: 10%" class="text-center">Overtime<br> Pay</th>
+                            <th style="width: 15%"class="text-center text-danger">Cash<br>Advance</th>
+                            <th style="width: 15%" class="text-center">Total<br>Salary</th>
+                            <th style="width: 10%" class="text-center">Action</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -93,11 +152,13 @@
                                 Rp. {{ number_format($data['current_salary'], 0, ',', '.') }}
                             </td>
                             <td class="text-center">{{ $data['total_days_worked'] }}</td>
-                            <td class="text-center">{{ $data['total_days_off'] }}</td>
+                            {{-- <td class="text-center">{{ $data['total_days_off'] }}</td> --}}
                             <td class="text-center">{{ $data['total_absent'] }}</td>
                             <td class="text-center">{{ $data['total_late_check_in'] }}</td>
                             <td class="text-center">{{ $data['total_early_check_out'] }}</td>
                             <td class="text-center">{{ $data['effective_work_days'] }}</td>
+                            <td class="text-center">Rp. {{ number_format($data['attendance_allowance'], 0, ',', '.') }}</td>
+                            <td class="text-center">Rp. {{ number_format($data['transport_allowance'], 0, ',', '.') }}</td>
                             <td class="text-center">{{ $data['total_overtime'] }}</td>
                             <td class="text-left">Rp. {{ number_format($data['overtime_pay'], 0, ',', '.') }}</td>
 
@@ -107,18 +168,12 @@
 
                             <td class="text-left">Rp. {{ number_format($data['total_salary'], 0, ',', '.') }}</td>
 
-                            <td class="text-center">
-                                @if (strtolower($data['status']) === 'pending')
-                                <form method="POST" action="{{ route('payroll.approve', $data['payroll_id']) }}"
-                                    style="display: inline;" id="approve-form-{{ $data['payroll_id'] }}">
-                                    @csrf
-                                    @method('PUT')
-                                    <button type="button" class="btn btn-success btn-sm"
-                                        onclick="confirmApprove({{ $data['payroll_id'] }})">Approve</button>
-                                </form>
-                                @else
-                                <span class="badge badge-success">Approved</span>
-                                @endif
+                            <td>
+                                <button 
+                                    class="btn btn-info btn-sm add-transport-btn"
+                                    data-id="{{ $data['payroll_id'] }}">
+                                    Add Transport<br>Allowance
+                                </button>
                             </td>
                         </tr>
                         @empty
@@ -128,44 +183,12 @@
                         @endforelse
                     </tbody>
                 </table>
-            </div>
+            </div>>            
         </div>
     </div>
 </section>
 
-
-{{-- <script>
-    function confirmApprove(id) {
-        Swal.fire({
-            title: 'Are you sure?',
-            text: 'You want to approve this payroll?',
-            icon: 'warning',
-            showCancelButton: true,
-            confirmButtonText: 'Yes, approve it!',
-            cancelButtonText: 'Cancel',
-            reverseButtons: true
-        }).then((result) => {
-            if (result.isConfirmed) {
-                $.ajax({
-                    url: `/Superadmin/payroll/approve/${id}`,
-                    method: 'PUT',
-                    data: { _token: '{{ csrf_token() }}' },
-                    success: function(res) {
-                        Swal.fire('Approved!', 'The payroll has been approved.', 'success');
-                        setTimeout(() => location.reload(), 1200);
-                    },
-                    error: function(err) {
-                        Swal.fire('Error', 'Failed to approve payroll.', 'error');
-                        console.error(err.responseText);
-                    }
-                });
-            } else {
-                Swal.fire('Cancelled', 'The payroll was not approved.', 'error');
-            }
-        });
-    }
-    </script> --}}
-<script>
+    <script>
         function confirmApprove(id) {
             Swal.fire({
                 title: 'Are you sure?',
@@ -184,7 +207,16 @@
                 }
             });
         }
+
+        function formatNumber(input) {
+            // Ambil angka mentah
+            let value = input.value.replace(/[^\d]/g, '');
+
+            // Format ke ribuan
+            input.value = new Intl.NumberFormat('id-ID').format(value);
+        }
     </script>
+
 
 {{-- ... --}}
 <script>
@@ -244,11 +276,41 @@
                 }
             });
         });
+
+        $('.add-transport-btn').on('click', function () {
+            $('#payroll_id').val($(this).data('id'));
+            $('#modalTransport').modal('show');
+        });
+
+        $('#formTransport').on('submit', function (e) {
+            e.preventDefault();
+
+            const payrollId = $('#payroll_id').val();
+
+            let rawValue = $('#transport_value').val().replace(/\./g, '');
+
+            $.ajax({
+                url: `/Superadmin/payroll/update-transport/${payrollId}`,
+                method: 'POST',
+                data: {
+                    _token: '{{ csrf_token() }}',
+                    transport_allowance: rawValue
+                },
+                success: function (res) {
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Success!',
+                        text: res.message,
+                        timer: 1500,
+                        showConfirmButton: false
+                    });
+
+                    setTimeout(() => {
+                        location.reload();
+                    }, 1600);
+                }
+            });
+        });
     });
 </script>
-
-
-
-
-
 @endsection

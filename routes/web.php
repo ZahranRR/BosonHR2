@@ -134,9 +134,9 @@ Route::middleware(['auth', 'checkRoleStatus'])->group(function () {
             ->name('payroll.approve')
             ->middleware('permission:payroll.index');
 
-        // Route::put('/payroll/approve/{id}', [CashAdvanceController::class, 'processPayrollApproval'])
-        //     ->name('payroll.approve')
-        //     ->middleware('permission:payroll.index');
+        Route::post('/payroll/update-transport/{id}', [PayrollController::class, 'updateTransport'])
+            ->name('payroll.updateTransport')
+            ->middleware('permission:payroll.index');
 
         Route::get('/payroll/export', [PayrollController::class, 'exportToCsv'])
             ->name('payroll.exports')

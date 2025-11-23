@@ -56,14 +56,14 @@
                                 <div class="form-group">
                                     <label>Time Check-In</label>
                                     <input type="time" name="check_in_time" class="form-control" required
-                                        value="{{ old('check_in_time', $division->check_in_time) }}">
+                                        value="{{ old('check_in_time', \Carbon\Carbon::parse($division->check_in_time)->format('H:i')) }}">
 
                                 </div>
 
                                 <div class="form-group">
                                     <label>Time Check-Out</label>
                                     <input type="time" name="check_out_time" class="form-control" required
-                                        value="{{ old('check_out_time', $division->check_out_time) }}">
+                                        value="{{ old('check_out_time', \Carbon\Carbon::parse($division->check_out_time)->format('H:i')) }}">
                                 </div>
                             </div>
 

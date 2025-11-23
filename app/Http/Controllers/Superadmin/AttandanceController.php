@@ -76,6 +76,7 @@ class AttandanceController extends Controller
         if (!$employee) {
             return redirect()->back()->with('error', 'Employee record not found for this user.');
         }
+
         $today = now()->format('Y-m-d');
 
         // Periksa apakah karyawan sedang cuti untuk hari ini
@@ -84,6 +85,15 @@ class AttandanceController extends Controller
         if ($onLeave) {
             // Jika karyawan sedang cuti, langsung kirimkan status cuti
             return view('Employee.attandance.scan', ['onLeave' => true, 'employee' => $employee]);
+        }
+
+        $isWorkday = $this->isEmployeeWorkday($employee, $today);
+
+        if (!$isWorkday) {
+            return view('Employee.attandance.scan', [
+                'nonWorkday' => true,
+                'employee' => $employee
+            ]);
         }
 
         // Ambil data absensi karyawan untuk hari ini
@@ -108,10 +118,15 @@ class AttandanceController extends Controller
 
         // Periksa apakah karyawan sedang cuti
         $today = now()->format('Y-m-d');
+        
         $onLeave = Offrequest::where('user_id', Auth::id())->where('status', 'approved')->whereDate('start_event', '<=', $today)->whereDate('end_event', '>=', $today)->exists();
 
         if ($onLeave) {
             return response()->json(['success' => false, 'message' => 'You are on leave today']);
+        }
+
+        if (!$this->isEmployeeWorkday($employee, $today)) {
+            return response()->json(['success' => false, 'message' => 'You cannot check in today. It is not a working day.']);
         }
 
         // Ambil data absensi karyawan untuk hari ini
@@ -171,10 +186,15 @@ class AttandanceController extends Controller
 
         // Periksa apakah karyawan sedang cuti
         $today = now()->format('Y-m-d');
+
         $onLeave = Offrequest::where('user_id', Auth::id())->where('status', 'approved')->whereDate('start_event', '<=', $today)->whereDate('end_event', '>=', $today)->exists();
 
         if ($onLeave) {
             return response()->json(['success' => false, 'message' => 'You are on leave today']);
+        }
+
+        if (!$this->isEmployeeWorkday($employee, $today)) {
+            return response()->json(['success' => false, 'message' => 'You cannot check in today. It is not a working day.']);
         }
 
         // Ambil data absensi karyawan untuk hari ini
@@ -312,4 +332,33 @@ class AttandanceController extends Controller
 
         return view('Superadmin.Employeedata.Attandance.recap', compact('employee', 'attendances', 'totalPresent', 'totalLate', 'totalEarly', 'totalAbsent', 'month'));
     }
+
+    private function isEmployeeWorkday($employee, $date)
+    {
+        // Ambil work_days dari divisi
+        $division = $employee->division;
+
+        if (!$division || !$division->work_days) {
+            return false; // jika tidak ada aturan → anggap bukan hari kerja
+        }
+
+        // decode JSON atau CSV
+        $workdays = [];
+        if (is_string($division->work_days)) {
+            $decoded = json_decode($division->work_days, true);
+            if (json_last_error() === JSON_ERROR_NONE) {
+                $workdays = $decoded;
+            } else {
+                $workdays = explode(',', $division->work_days);
+            }
+        } elseif (is_array($division->work_days)) {
+            $workdays = $division->work_days;
+        }
+
+        // nama hari ini
+        $dayName = Carbon::parse($date)->format('l');
+
+        return in_array($dayName, $workdays);
+    }
+
 }

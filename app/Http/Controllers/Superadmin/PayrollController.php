@@ -215,8 +215,23 @@ class PayrollController extends Controller
             // $totalAbsent = max(0, $plannedWorkDays - $workedDays);
             $totalAbsent = $this->calculateCustomAbsents($employee, $plannedWorkDays, $workedDays);
 
+            $divisionName = strtolower(optional($employee->division)->name);
+
+            //transport
+            $existingPayroll = Payroll::where('employee_id', $employee->employee_id)
+                ->where('month', $month)
+                ->first();
+
+            $employeeTransport = $employee->transport_allowance ?? 0;
+
+            if ($divisionName === 'stock opname' && $existingPayroll) {
+                $transportAllowance = $existingPayroll->transport_allowance ?? 0;
+            } else {
+                $transportAllowance = $employeeTransport;
+            }
+
             $positionalAllowance = $employee->positional_allowance ?? 0;
-            $transportAllowance = $employee->transport_allowance ?? 0;
+            // $transportAllowance = $employee->transport_allowance ?? 0;
             $bonusAllowance = $employee->bonus_allowance ?? 0;
             $baseSalary = $totalNormalHours * $hourlyRate;
             $overtimePay = $totalOvertimeHours * $hourlyRate;
@@ -378,8 +393,23 @@ class PayrollController extends Controller
 
             // --- Hitung gaji dasar & potongan ---
             $positionalAllowance = $employee->positional_allowance ?? 0;
-            $transportAllowance = $employee->transport_allowance ?? 0;
+            // $transportAllowance = $employee->transport_allowance ?? 0;
             $bonusAllowance = $employee->bonus_allowance ?? 0;
+
+            $divisionName = strtolower(optional($employee->division)->name);
+
+            //transport
+            $existingPayroll = Payroll::where('employee_id', $employee->employee_id)
+                ->where('month', $month)
+                ->first();
+
+            $employeeTransport = $employee->transport_allowance ?? 0;
+
+            if ($divisionName === 'stock opname' && $existingPayroll) {
+                $transportAllowance = $existingPayroll->transport_allowance ?? 0;
+            } else {
+                $transportAllowance = $employeeTransport;
+            }
 
             $activeCashAdvance = CashAdvance::where('employee_id', $employee->employee_id)
                 ->whereIn('status', ['ongoing','completed'] )
@@ -404,7 +434,9 @@ class PayrollController extends Controller
                 'kasir',
                 'admin wholesale',
                 'admin retail',
-                'admin operasional retail'
+                'admin operasional retail',
+                'head office',
+                'stock opname'
             ])) {
                 $weeklyData = $this->calculateWeeklyWorkdays($employee, $divisionWorkDays, $month);
                 $attendanceAllowance = $employee->attendance_allowance ?? 0;
@@ -421,7 +453,7 @@ class PayrollController extends Controller
 
                     if ($finalAllowance <= 0) {
                         // allowance hangus → potong prorate
-                        $maxAbsent = in_array($divisionName, ['kasir', 'admin wholesale', 'admin retail', 'admin operasional retail'])
+                        $maxAbsent = in_array($divisionName, ['kasir', 'admin wholesale', 'admin retail', 'admin operasional retail', 'head office', 'stock opname'])
                             ? 3 : 4;
                         $extraAbsents = max(0, $totalAbsent - $maxAbsent);
                         $prorateDeduction = ($employee->current_salary / 30) * $extraAbsents;
@@ -660,34 +692,6 @@ class PayrollController extends Controller
                 Log::debug("[DEBUG] Skip National Holiday: {$dateStr} ({$dayName})");
             }
 
-            // // --- Supir & Teknisi AC: skip Minggu genap ---
-            // if ($isWorkday && in_array($division, ['supir', 'teknisi ac'])) {
-            //     if ($dayName === 'Sunday' && $date->weekOfMonth % 2 == 0) {
-            //         \Log::debug("[DEBUG] Skip Sunday Genap ({$division}): {$dateStr}");
-            //         $isWorkday = false;
-            //     }
-            // }
-
-            // // --- Kenek & Helper: skip Minggu terakhir ---
-            // if ($isWorkday && in_array($division, ['kenek', 'helper'])) {
-            //     if ($dayName === 'Sunday') {
-            //         $lastSunday = Carbon::create($date->year, $date->month, 1)
-            //             ->endOfMonth()
-            //             ->previous('Sunday')
-            //             ->format('Y-m-d');
-            //         if ($dateStr === $lastSunday) {
-            //             \Log::debug("[DEBUG] Skip Last Sunday ({$division}): {$dateStr}");
-            //             $isWorkday = false;
-            //         }
-            //     }
-            // }
-
-            // // --- Kasir: 2 weekday libur tiap bulan ---
-            // if ($isWorkday && $division === 'kasir' && in_array($dateStr, $kasirExtraOff)) {
-            //     \Log::debug("[DEBUG] Kasir extra weekday off: {$dateStr}");
-            //     $isWorkday = false;
-            // }
-
             if ($isWorkday) {
                 Log::debug("[DEBUG] Workday: {$dateStr} ({$dayName})");
             }
@@ -777,7 +781,7 @@ class PayrollController extends Controller
         }
 
         //  Kasir & Admin pakai aturan langsung per absen
-        if (in_array($division, ['kasir', 'admin wholesale', 'admin retail', 'admin operasional retail'])) {
+        if (in_array($division, ['kasir', 'admin wholesale', 'admin retail', 'admin operasional retail', 'head office', 'stock opname'])) {
             if ($totalAbsents > 3) {
                 // allowance hangus total
                 Log::info("AttendanceAllowance | {$employee->first_name} {$employee->last_name} | {$division} | Absent {$totalAbsents}x > 3 → allowance hangus total.");
@@ -808,10 +812,6 @@ class PayrollController extends Controller
         $lostAllFull = $scheme['lostAllFull'];
 
         $deduction = array_sum($lostShares);
-        // $deduction = 0;
-        // foreach ($lostShares as $w => $val) {
-        //     $deduction += (float)$val;
-        // }
 
         if ($lostAllFull) {
             $allFullOriginal = $baseAllowance - (4 * ($baseAllowance / 6));
@@ -933,6 +933,35 @@ class PayrollController extends Controller
 
             return response()->json([
                 'message' => 'Terjadi kesalahan saat menyimpan kasbon.',
+            ], 500);
+        }
+    }
+
+    public function updateTransport(Request $request, $id)
+    {
+        try {
+            $request->validate([
+                'transport_allowance' => 'required|numeric|min:0',
+            ]);
+
+            $payroll = Payroll::findOrFail($id);
+            $oldValue = $payroll->transport_allowance;
+
+            $payroll->transport_allowance = $request->transport_allowance;
+            $payroll->save();
+
+            Log::info("Transport updated", [
+                'payroll_id' => $id,
+                'old' => $oldValue,
+                'new' => $payroll->transport_allowance,
+            ]);
+
+            return response()->json([
+                'message' => 'Transport allowance updated successfully.'
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'Failed to update transport allowance',
             ], 500);
         }
     }

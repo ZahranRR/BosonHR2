@@ -103,9 +103,19 @@
                     <!-- Jika karyawan sedang cuti, tampilkan alert -->
                     @if (isset($onLeave) && $onLeave)
                         <div class="alert alert-warning text-center">
-                            You are on leave today.
+                            You are on leave today. Attendance is disabled.
                         </div>
                         <!-- Sembunyikan tombol check-in dan check-out jika cuti -->
+                        <script>
+                            document.getElementById('btn-checkin').style.display = 'none';
+                            document.getElementById('btn-checkout').style.display = 'none';
+                            document.getElementById('camera-container').style.display = 'none';
+                        </script>
+                    @elseif (isset($nonWorkday) && $nonWorkday)
+                        <div class="alert alert-warning text-center">
+                            Today is not your working day. Attendance is disabled.
+                        </div>
+                    
                         <script>
                             document.getElementById('btn-checkin').style.display = 'none';
                             document.getElementById('btn-checkout').style.display = 'none';
