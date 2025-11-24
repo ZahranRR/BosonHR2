@@ -666,27 +666,14 @@ class PayrollController extends Controller
         $startDate = Carbon::create($year, $monthNumber, 1)->startOfMonth();
         $endDate   = Carbon::create($year, $monthNumber, 1)->endOfMonth();
 
-        $divisionName = strtolower((string) optional($employee->division)->name);
-
-        //Divisi libur nasional
-        $divisionsUsingHoliday = [
-            'head office',
-            'stock opname',
-            'admin wholesale'
-        ];
-
-        if (in_array($divisionName, $divisionsUsingHoliday)) {
-            // Ambil libur nasional
-            $holidayDates = Event::where('category', 'danger')
-                ->whereBetween('start_date', [$startDate, $endDate])
-                ->get()
-                ->flatMap(fn($event) => CarbonPeriod::create($event->start_date, $event->end_date)->toArray())
-                ->map(fn($date) => $date->format('Y-m-d'))
-                ->unique()
-                ->toArray();
-        } else {
-            $holidayDates = [];
-        }
+        // Ambil libur nasional
+        $holidayDates = Event::where('category', 'danger')
+            ->whereBetween('start_date', [$startDate, $endDate])
+            ->get()
+            ->flatMap(fn($event) => CarbonPeriod::create($event->start_date, $event->end_date)->toArray())
+            ->map(fn($date) => $date->format('Y-m-d'))
+            ->unique()
+            ->toArray();
 
         $period = CarbonPeriod::create($startDate, $endDate);
         $division = strtolower((string) optional($employee->division)->name);
@@ -723,28 +710,15 @@ class PayrollController extends Controller
         $startDate = Carbon::create($year, $monthNumber, 1)->startOfMonth();
         $endDate   = Carbon::create($year, $monthNumber, 1)->endOfMonth();
 
-        $divisionName = strtolower((string) optional($employee->division)->name);
+        // Ambil libur nasional
+        $holidayDates = Event::where('category', 'danger')
+            ->whereBetween('start_date', [$startDate, $endDate])
+            ->get()
+            ->flatMap(fn($event) => CarbonPeriod::create($event->start_date, $event->end_date)->toArray())
+            ->map(fn($date) => $date->format('Y-m-d'))
+            ->unique()
+            ->toArray();
 
-        //Divisi libur nasional
-        $divisionsUsingHoliday = [
-            'head office',
-            'stock opname',
-            'admin wholesale'
-        ];
-
-        if (in_array($divisionName, $divisionsUsingHoliday)) {
-            // Ambil libur nasional
-            $holidayDates = Event::where('category', 'danger')
-                ->whereBetween('start_date', [$startDate, $endDate])
-                ->get()
-                ->flatMap(fn($event) => CarbonPeriod::create($event->start_date, $event->end_date)->toArray())
-                ->map(fn($date) => $date->format('Y-m-d'))
-                ->unique()
-                ->toArray();
-        } else {
-            $holidayDates = [];
-        }
-        
         // Ambil absensi pegawai
         $attendances = $employee->attendanceLogs()
             ->whereMonth('check_in', $monthNumber)

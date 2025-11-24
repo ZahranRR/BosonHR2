@@ -30,12 +30,17 @@ class AllInOneAttendanceSeeder extends Seeder
                 'check_in' => '09:00',
                 'check_out' => '18:00',
             ],
-            'Admin Retail' => [
+            'Head Office' => [
                 'days' => ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'],
                 'check_in' => '09:00',
                 'check_out' => '17:00',
             ],
-            'Admin Operasional Retail' => [
+            'Operasional Retail' => [
+                'days' => ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'],
+                'check_in' => '09:00',
+                'check_out' => '18:00',
+            ],
+            'Stock Opname' => [
                 'days' => ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'],
                 'check_in' => '09:00',
                 'check_out' => '18:00',
