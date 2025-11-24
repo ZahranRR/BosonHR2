@@ -434,7 +434,7 @@ class PayrollController extends Controller
                 'kasir',
                 'admin wholesale',
                 'admin retail',
-                'admin operasional retail',
+                'operasional retail',
                 'head office',
                 'stock opname'
             ])) {
@@ -453,7 +453,7 @@ class PayrollController extends Controller
 
                     if ($finalAllowance <= 0) {
                         // allowance hangus → potong prorate
-                        $maxAbsent = in_array($divisionName, ['kasir', 'admin wholesale', 'admin retail', 'admin operasional retail', 'head office', 'stock opname'])
+                        $maxAbsent = in_array($divisionName, ['kasir', 'admin wholesale', 'admin retail', 'operasional retail', 'head office', 'stock opname'])
                             ? 3 : 4;
                         $extraAbsents = max(0, $totalAbsent - $maxAbsent);
                         $prorateDeduction = ($employee->current_salary / 30) * $extraAbsents;
@@ -666,14 +666,27 @@ class PayrollController extends Controller
         $startDate = Carbon::create($year, $monthNumber, 1)->startOfMonth();
         $endDate   = Carbon::create($year, $monthNumber, 1)->endOfMonth();
 
-        // Ambil libur nasional
-        $holidayDates = Event::where('category', 'danger')
-            ->whereBetween('start_date', [$startDate, $endDate])
-            ->get()
-            ->flatMap(fn($event) => CarbonPeriod::create($event->start_date, $event->end_date)->toArray())
-            ->map(fn($date) => $date->format('Y-m-d'))
-            ->unique()
-            ->toArray();
+        $divisionName = strtolower((string) optional($employee->division)->name);
+
+        //Divisi libur nasional
+        $divisionsUsingHoliday = [
+            'head office',
+            'stock opname',
+            'admin wholesale'
+        ];
+
+        if (in_array($divisionName, $divisionsUsingHoliday)) {
+            // Ambil libur nasional
+            $holidayDates = Event::where('category', 'danger')
+                ->whereBetween('start_date', [$startDate, $endDate])
+                ->get()
+                ->flatMap(fn($event) => CarbonPeriod::create($event->start_date, $event->end_date)->toArray())
+                ->map(fn($date) => $date->format('Y-m-d'))
+                ->unique()
+                ->toArray();
+        } else {
+            $holidayDates = [];
+        }
 
         $period = CarbonPeriod::create($startDate, $endDate);
         $division = strtolower((string) optional($employee->division)->name);
@@ -710,15 +723,28 @@ class PayrollController extends Controller
         $startDate = Carbon::create($year, $monthNumber, 1)->startOfMonth();
         $endDate   = Carbon::create($year, $monthNumber, 1)->endOfMonth();
 
-        // Ambil libur nasional
-        $holidayDates = Event::where('category', 'danger')
-            ->whereBetween('start_date', [$startDate, $endDate])
-            ->get()
-            ->flatMap(fn($event) => CarbonPeriod::create($event->start_date, $event->end_date)->toArray())
-            ->map(fn($date) => $date->format('Y-m-d'))
-            ->unique()
-            ->toArray();
+        $divisionName = strtolower((string) optional($employee->division)->name);
 
+        //Divisi libur nasional
+        $divisionsUsingHoliday = [
+            'head office',
+            'stock opname',
+            'admin wholesale'
+        ];
+
+        if (in_array($divisionName, $divisionsUsingHoliday)) {
+            // Ambil libur nasional
+            $holidayDates = Event::where('category', 'danger')
+                ->whereBetween('start_date', [$startDate, $endDate])
+                ->get()
+                ->flatMap(fn($event) => CarbonPeriod::create($event->start_date, $event->end_date)->toArray())
+                ->map(fn($date) => $date->format('Y-m-d'))
+                ->unique()
+                ->toArray();
+        } else {
+            $holidayDates = [];
+        }
+        
         // Ambil absensi pegawai
         $attendances = $employee->attendanceLogs()
             ->whereMonth('check_in', $monthNumber)
@@ -781,7 +807,7 @@ class PayrollController extends Controller
         }
 
         //  Kasir & Admin pakai aturan langsung per absen
-        if (in_array($division, ['kasir', 'admin wholesale', 'admin retail', 'admin operasional retail', 'head office', 'stock opname'])) {
+        if (in_array($division, ['kasir', 'admin wholesale', 'admin retail', 'operasional retail', 'head office', 'stock opname'])) {
             if ($totalAbsents > 3) {
                 // allowance hangus total
                 Log::info("AttendanceAllowance | {$employee->first_name} {$employee->last_name} | {$division} | Absent {$totalAbsents}x > 3 → allowance hangus total.");
