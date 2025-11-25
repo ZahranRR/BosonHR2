@@ -94,7 +94,7 @@
                                                 class="btn btn-success btn-sm mb-1 action-btn approve-kasbon"
                                                 data-id="{{ $c->cash_advance_id }}"
                                                 @if($c->status === 'cancelled' || $c->status === 'completed') disabled @endif>
-                                                Approve Kasbon
+                                                Complete Kasbon
                                             </button>
                                         </form>
 

@@ -102,7 +102,7 @@
                         <input type="month" name="month" class="form-control ml-2"
                             value="{{ request()->query('month', now()->format('Y-m')) }}">
 
-                        <select name="division" class="form-control ml-2">
+                        <select name="division" class="custom-select ml-2">
                             <option value="">All Divisions</option>
                             @foreach ($divisions as $division)
                             <option value="{{ $division->id }}" {{ in_array($division->id, (array)request()->query('division')) ? 'selected' : '' }}>
@@ -116,6 +116,10 @@
 
                     {{-- Export Button --}}
                     <form method="GET" action="{{ route('payroll.exports') }}" class="ml-3">
+                        <input type="hidden" name="search" value="{{ request()->query('search') }}">
+                        <input type="hidden" name="month" value="{{ request()->query('month') }}">
+                        <input type="hidden" name="division" value="{{ request()->query('division') }}">
+
                         <button type="submit" class="btn btn-primary">Export to CSV</button>
                     </form>
                 </div>
@@ -152,7 +156,6 @@
                                 Rp. {{ number_format($data['current_salary'], 0, ',', '.') }}
                             </td>
                             <td class="text-center">{{ $data['total_days_worked'] }}</td>
-                            {{-- <td class="text-center">{{ $data['total_days_off'] }}</td> --}}
                             <td class="text-center">{{ $data['total_absent'] }}</td>
                             <td class="text-center">{{ $data['total_late_check_in'] }}</td>
                             <td class="text-center">{{ $data['total_early_check_out'] }}</td>

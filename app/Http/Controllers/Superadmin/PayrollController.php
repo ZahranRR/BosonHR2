@@ -14,6 +14,7 @@ use App\Models\Event;
 use App\Models\Division;
 use App\Models\CashAdvance;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Response;
 use Illuminate\Support\Facades\Log;
@@ -965,4 +966,103 @@ class PayrollController extends Controller
             ], 500);
         }
     }
+
+    public function exportToCsv(Request $request)
+    {
+        $search = $request->input('search');
+        $month = $request->input('month');
+        $division = $request->input('division');
+
+        $query = Payroll::query();
+
+        // Filter bulan
+        if ($month) {
+            $query->where('month', $month);
+        }
+
+        // Filter search nama
+        if ($search) {
+            $query->where('employee_name', 'like', "%{$search}%");
+        }
+
+        // Filter divisi
+        if ($division) {
+            $query->whereHas('employee', function ($q) use ($division) {
+                $q->where('division_id', $division);
+            });
+        }
+
+        $payrolls = $query->get();
+
+        // Ambil nama divisi
+        $divisionName = 'all_divisions';
+        if ($division) {
+            $divisionModel = \App\Models\Division::find($division);
+            if ($divisionModel) {
+                $divisionName = Str::slug($divisionModel->name, '_');
+            }
+        }
+
+        // Ambil month
+        $monthName = $month ? str_replace('-', '', $month) : 'all_months';
+
+        // Buat CSV
+        $filename = "payroll_{$divisionName}_{$monthName}_export_" . now()->format('YmdHis') . ".csv";
+
+        $headers = [
+            "Content-type"        => "text/csv",
+            "Content-Disposition" => "attachment; filename={$filename}",
+            "Pragma"              => "no-cache",
+            "Cache-Control"       => "must-revalidate, post-check=0, pre-check=0",
+            "Expires"             => "0"
+        ];
+
+        $columns = [
+            'Employee Name',
+            'Current Salary',
+            'Total Days Worked',
+            'Total Absent',
+            'Total Late',
+            'Total Early',
+            'Effective Work Days',
+            'Attendance Allowance',
+            'Transport Allowance',
+            'Positional Allowance',
+            'Bonus',
+            'Overtime Pay',
+            'Absent Deduction',
+            'Cash Advance',
+            'Total Salary',
+        ];
+
+        $callback = function() use ($payrolls, $columns) {
+            $file = fopen('php://output', 'w');
+            fputcsv($file, $columns);
+
+            foreach ($payrolls as $row) {
+                fputcsv($file, [
+                    $row->employee_name,
+                    $row->current_salary,
+                    $row->total_days_worked,
+                    $row->total_absent,
+                    $row->total_late_check_in,
+                    $row->total_early_check_out,
+                    $row->effective_work_days,
+                    $row->attendance_allowance,
+                    $row->transport_allowance,
+                    $row->employee->positional_allowance,
+                    $row->employee->bonus_allowance,
+                    $row->overtime_pay,
+                    $row->absent_deduction,
+                    $row->cash_advance,
+                    $row->total_salary
+                ]);
+            }
+
+            fclose($file);
+        };
+
+        return response()->stream($callback, 200, $headers);
+    }
+
 }

@@ -132,7 +132,7 @@
                                 <a href="{{ route('kasbon.index') }}" 
                                     class="nav-link {{ request()->routeIs('kasbon.index') ? 'active' : '' }}">
                                     <i class="far fa-circle nav-icon"></i>
-                                    <p>Kasbon Approval</p>
+                                    <p>Kasbon</p>
                                 </a>
                             </li>
                             @endcan
@@ -385,7 +385,7 @@
                                 @can('kasbon.list')
                                     <a href="{{ route('kasbon.list') }}" class="nav-link">
                                         <i class="fas fa-credit-card nav-icon"></i>
-                                        <p>Kasbon</p>
+                                        <p>List Kasbon</p>
                                     </a>
                                 @endcan
                             </li>
