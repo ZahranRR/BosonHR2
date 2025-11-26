@@ -56,6 +56,8 @@ class PayrollController extends Controller
         $earlyDeduction = $salaryDeduction->early_deduction ?? 0;
 
         $payrolls = $employees->map(function ($employee) use ($month, $workdaySetting, $lateDeduction, $earlyDeduction) {
+            $this->generateRawRecap($employee, $month);
+
             $existingPayroll = Payroll::where('employee_id', $employee->employee_id)
                 ->where('month', $month)
                 ->first();
@@ -85,6 +87,50 @@ class PayrollController extends Controller
         })->filter()->values()->all();
 
         return view('Superadmin.payroll.index', compact('payrolls', 'month', 'search', 'divisions'));
+    }
+
+    private function generateRawRecap($employee, $month)
+    {
+        $month = Carbon::parse($month)->format('Y-m');
+
+        $logs = $employee->attendanceLogs()
+            ->whereMonth('check_in', Carbon::parse($month)->month)
+            ->whereYear('check_in', Carbon::parse($month)->year)
+            ->get();
+
+        $presentDates = [];
+        $late = 0;
+        $early = 0;
+
+        foreach ($logs as $log) {
+            if (!$log->check_in || !$log->check_out) continue;
+
+            $checkIn  = Carbon::parse($log->check_in);
+            $checkOut = Carbon::parse($log->check_out);
+
+            $date = $checkIn->toDateString();
+            $presentDates[$date] = true;
+
+            $standardIn  = Carbon::parse($employee->division->check_in_time ?? '09:00:00');
+            $standardOut = Carbon::parse($employee->division->check_out_time ?? '18:00:00');
+
+            if ($checkIn->gt($standardIn)) $late++;
+            if ($checkOut->lt($standardOut)) $early++;
+        }
+
+        $workedDays = count($presentDates);
+
+        AttandanceRecap::updateOrCreate(
+            [
+                'employee_id' => $employee->employee_id,
+                'month'       => $month,
+            ],
+            [
+                'total_present'  => $workedDays,
+                'total_late'     => $late,
+                'total_early'    => $early,
+            ]
+        );
     }
 
     private function calculateFreelancePayroll($employee, $month, $cashAdvance)
@@ -192,18 +238,7 @@ class PayrollController extends Controller
 
                 $totalOvertimeHours += $hours;
 
-                \Log::debug("[OT] {$employee->first_name} {$employee->last_name} | {$ot->overtime_date} | Checkout {$checkOut->format('H:i')} | Overtime {$hours} jam");
-
-                //simpan total overtime ke db
-                AttandanceRecap::updateOrCreate(
-                    [
-                        'employee_id' => $employee->employee_id,
-                        'month'       => $month,
-                    ],
-                    [
-                        'total_overtime' => $totalOvertimeHours,
-                    ]
-                );                
+                \Log::debug("[OT] {$employee->first_name} {$employee->last_name} | {$ot->overtime_date} | Checkout {$checkOut->format('H:i')} | Overtime {$hours} jam");             
             }
 
             // ⛔ Pastikan overtime minimal 0
@@ -214,7 +249,20 @@ class PayrollController extends Controller
 
             $workedDays = count($uniqueWorkDays);
             // $totalAbsent = max(0, $plannedWorkDays - $workedDays);
-            $totalAbsent = $this->calculateCustomAbsents($employee, $plannedWorkDays, $workedDays);
+            $totalAbsent = $this->calculateCustomAbsents($employee, $plannedWorkDays, $workedDays, $month);
+
+            AttandanceRecap::updateOrCreate(
+                [
+                    'employee_id' => $employee->employee_id,
+                    'month'       => $month,
+                ],
+                [
+                    'total_present'  => $workedDays,
+                    'total_late'     => $lateCount,
+                    'total_early'    => 0, // freelance tidak punya early checkout
+                    'total_overtime' => $totalOvertimeHours,
+                ]
+            );
 
             $divisionName = strtolower(optional($employee->division)->name);
 
@@ -300,7 +348,7 @@ class PayrollController extends Controller
 
             $monthlyWorkdays = $this->calculateWorkdaysForMonth($divisionWorkDays, $month, $employee);
             // $totalAbsent = max(0, $monthlyWorkdays - $totalDaysWorked);
-            $totalAbsent = $this->calculateCustomAbsents($employee, $monthlyWorkdays, $totalDaysWorked);
+            $totalAbsent = $this->calculateCustomAbsents($employee, $monthlyWorkdays, $totalDaysWorked, $month);
 
             // --- Hitung daily salary & hourly rate ---
             $dailySalary = $monthlyWorkdays > 0 ? $employee->current_salary / $monthlyWorkdays : 0;
@@ -595,10 +643,10 @@ class PayrollController extends Controller
     }
 
 
-    private function calculateCustomAbsents($employee, $plannedWorkDays, $workedDays)
+    private function calculateCustomAbsents($employee, $plannedWorkDays, $workedDays, $month)
     {
         $divisionName = strtolower((string) optional($employee->division)->name);
-        $month = Carbon::parse(now())->format('Y-m');
+        $month = Carbon::parse(($month))->format('Y-m');
 
         //hitung absent kotor
         $rawAbsent = max(0, $plannedWorkDays - $workedDays);
@@ -767,16 +815,23 @@ class PayrollController extends Controller
 
         //  Kalau ada finalAbsent, distribusikan ke absencesPerWeek
         if ($finalAbsent !== null) {
+            // Redistribute absences so total matches finalAbsent
             $rawTotal = array_sum($absencesPerWeek);
-            if ($rawTotal > 0 && $finalAbsent < $rawTotal) {
-                // kurangi dari minggu terakhir yang punya absen
-                $reduce = $rawTotal - $finalAbsent;
-                foreach (array_reverse(array_keys($absencesPerWeek)) as $week) {
-                    if ($reduce <= 0) break;
-                    if ($absencesPerWeek[$week] > 0) {
-                        $absencesPerWeek[$week] -= 1;
-                        $reduce--;
-                    }
+
+            if ($finalAbsent !== null && $finalAbsent !== $rawTotal) {
+
+                // reset all weeks
+                foreach ($absencesPerWeek as $week => $count) {
+                    $absencesPerWeek[$week] = 0;
+                }
+
+                // distribute finalAbsent evenly from earlier weeks
+                $remaining = $finalAbsent;
+
+                foreach (array_keys($absencesPerWeek) as $week) {
+                    if ($remaining <= 0) break;
+                    $absencesPerWeek[$week] += 1;
+                    $remaining--;
                 }
             }
         }

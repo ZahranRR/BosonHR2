@@ -162,7 +162,7 @@
                     let form = this.closest('form');
 
                     Swal.fire({
-                        title: "Approve Kasbon?",
+                        title: "Complete Kasbon?",
                         text: "Kasbon akan disetujui dan tidak dapat diubah lagi.",
                         icon: "question",
                         showCancelButton: true,

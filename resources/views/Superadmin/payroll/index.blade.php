@@ -47,7 +47,7 @@
                         <input type="hidden" id="payroll_id">
     
                         <label>Transport Allowance</label>
-                        <input type="number" class="form-control" id="transport_value" oninput="formatNumber(this)">
+                        <input type="text" class="form-control" id="transport_value" oninput="formatNumber(this)">
                     </div>
     
                     <div class="modal-footer">
